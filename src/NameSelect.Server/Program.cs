@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NameSelect.Server.Auth;
 using NameSelect.Server.Data;
 using NameSelect.Server.Lists;
 
@@ -11,6 +12,8 @@ builder.Services.AddSingleton<ListFileLoader>();
 builder.Services.AddScoped<ListDirectoryScanner>();
 builder.Services.AddHostedService<ListRegistrarHostedService>();
 
+builder.Services.AddNameSelectAuth(builder.Configuration);
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -19,7 +22,11 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapAuthEndpoints();
 
 app.Run();
 
