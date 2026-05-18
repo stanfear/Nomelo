@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NameSelect.Server.Auth;
 using NameSelect.Server.Data;
+using NameSelect.Server.Endpoints;
 using NameSelect.Server.Lists;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,7 @@ app.UseAuthorization();
 
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
+app.MapListsEndpoints();
 
 app.Run();
 
