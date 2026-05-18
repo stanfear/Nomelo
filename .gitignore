@@ -24,3 +24,4 @@ pnpm-debug.log*
 yarn-error.log*
 .DS_Store
 Thumbs.db
+.claude/settings.local.json
