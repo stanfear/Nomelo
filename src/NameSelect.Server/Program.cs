@@ -8,6 +8,12 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
