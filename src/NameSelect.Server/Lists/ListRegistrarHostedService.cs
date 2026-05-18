@@ -65,10 +65,22 @@ public class ListRegistrarHostedService : IHostedService
             }
         }
 
-        var toRemove = await db.Lists
+        var staleIds = await db.Lists
             .Where(l => !seenIds.Contains(l.Id))
+            .Select(l => l.Id)
             .ToListAsync(ct);
-        if (toRemove.Count > 0) db.Lists.RemoveRange(toRemove);
+
+        foreach (var staleId in staleIds)
+        {
+            var hasSessions = await db.Sessions.AnyAsync(s => s.ListId == staleId, ct);
+            if (hasSessions)
+            {
+                _log.LogWarning("List {ListId} disappeared from disk but has existing sessions; keeping the row", staleId);
+                continue;
+            }
+            var toRemove = await db.Lists.FirstAsync(l => l.Id == staleId, ct);
+            db.Lists.Remove(toRemove);
+        }
 
         await db.SaveChangesAsync(ct);
         _log.LogInformation("Registered {Count} lists from {Dir}", seenIds.Count, dir);

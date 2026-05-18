@@ -59,10 +59,18 @@ public static class AuthExtensions
 
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/login", (string? returnUrl) =>
-            Results.Challenge(
-                new() { RedirectUri = string.IsNullOrEmpty(returnUrl) ? "/" : returnUrl },
-                new[] { OidcScheme }));
+        app.MapGet("/login", (HttpContext ctx, string? returnUrl) =>
+        {
+            var safeReturnUrl = !string.IsNullOrEmpty(returnUrl)
+                               && Uri.IsWellFormedUriString(returnUrl, UriKind.Relative)
+                               && returnUrl.StartsWith("/")
+                               && !returnUrl.StartsWith("//")
+                ? returnUrl
+                : "/";
+            return Results.Challenge(
+                new() { RedirectUri = safeReturnUrl },
+                new[] { OidcScheme });
+        });
 
         app.MapPost("/logout", () =>
             Results.SignOut(

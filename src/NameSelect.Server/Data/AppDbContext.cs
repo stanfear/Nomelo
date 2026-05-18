@@ -38,7 +38,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.ShareToken).HasColumnName("share_token");
             e.HasIndex(x => x.ShareToken).IsUnique();
             e.HasIndex(x => new { x.UserId, x.ListId });
-            e.HasOne<NameList>().WithMany().HasForeignKey(x => x.ListId);
+            e.HasOne<NameList>().WithMany().HasForeignKey(x => x.ListId).OnDelete(DeleteBehavior.Restrict);
         });
 
         b.Entity<Vote>(e =>
