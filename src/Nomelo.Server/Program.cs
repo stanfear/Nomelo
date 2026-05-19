@@ -58,12 +58,17 @@ app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapListsEndpoints();
 app.MapSessionsEndpoints();
 app.MapVotingEndpoints();
 app.MapShareEndpoints();
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
