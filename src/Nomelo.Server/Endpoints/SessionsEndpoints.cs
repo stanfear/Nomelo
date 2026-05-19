@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Nomelo.Server.Auth;
 using Nomelo.Server.Data;
 using Nomelo.Server.Data.Entities;
+using Nomelo.Server.Scoring;
 using Nomelo.Shared.Dtos;
 
 namespace Nomelo.Server.Endpoints;
@@ -36,7 +37,8 @@ public static class SessionsEndpoints
             var dtos = sessions.Select(x => new SessionDto(
                 x.s.Id, x.s.ListId, x.ListName, x.s.ConfidenceThreshold,
                 x.s.CreatedAt, x.s.UpdatedAt, x.s.ShareToken,
-                counts.GetValueOrDefault(x.s.Id, 0))).ToList();
+                counts.GetValueOrDefault(x.s.Id, 0),
+                false)).ToList();
 
             return Results.Ok(dtos);
         });
@@ -80,7 +82,7 @@ public static class SessionsEndpoints
 
             var dto = new SessionDto(session.Id, list.Id, list.Name,
                 session.ConfidenceThreshold, session.CreatedAt, session.UpdatedAt,
-                session.ShareToken, 0);
+                session.ShareToken, 0, false);
             return Results.Created($"/api/sessions/{session.Id}", dto);
         });
 
@@ -99,9 +101,26 @@ public static class SessionsEndpoints
                 .AsNoTracking()
                 .CountAsync(v => v.SessionId == id, ct);
 
+            var states = await db.ItemStates.AsNoTracking()
+                .Where(s => s.SessionId == id)
+                .ToDictionaryAsync(s => s.Item, s => (s.EloScore, s.TimesShown, s.IsBanned), ct);
+            var recentVotes = await db.Votes.AsNoTracking()
+                .Where(v => v.SessionId == id)
+                .OrderByDescending(v => v.PresentedAt)
+                .Take(StabilityCounter.StabilityThreshold)
+                .Select(v => new { v.ItemA, v.ItemB, v.Result })
+                .ToListAsync(ct);
+            var upsetFlags = recentVotes.Select(v =>
+            {
+                var ea = states.TryGetValue(v.ItemA, out var sa) ? sa.EloScore : 1000.0;
+                var eb = states.TryGetValue(v.ItemB, out var sb) ? sb.EloScore : 1000.0;
+                return UpsetDetector.IsUpset(v.Result, ea, eb);
+            }).ToList();
+            var stable = StabilityCounter.ConsecutiveNonUpsets(upsetFlags) >= StabilityCounter.StabilityThreshold;
+
             return Results.Ok(new SessionDto(session.Id, list.Id, list.Name,
                 session.ConfidenceThreshold, session.CreatedAt, session.UpdatedAt,
-                session.ShareToken, voteCount));
+                session.ShareToken, voteCount, stable));
         });
 
         return app;

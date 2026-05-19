@@ -8,4 +8,5 @@ public record SessionDto(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     string? ShareToken,
-    int VoteCount);
+    int VoteCount,
+    bool StabilityReached);
