@@ -8,6 +8,7 @@ namespace Nomelo.Server.Lists;
 public class ListRegistrarHostedService(
     IServiceProvider services,
     IOptions<ListsOptions> options,
+    ListCache cache,
     ILogger<ListRegistrarHostedService> log) : IHostedService
 {
     public async Task StartAsync(CancellationToken ct)
@@ -32,6 +33,7 @@ public class ListRegistrarHostedService(
 
             var lf = r.List!;
             seenIds.Add(lf.Id);
+            cache.Set(lf);
 
             var existing = await db.Lists.FirstOrDefaultAsync(l => l.Id == lf.Id, ct);
             if (existing is null)
@@ -61,6 +63,9 @@ public class ListRegistrarHostedService(
 
         foreach (var staleId in staleIds)
         {
+            // Stale = file no longer on disk, so it must not be served from cache regardless of DB state.
+            cache.Remove(staleId);
+
             var hasSessions = await db.Sessions.AnyAsync(s => s.ListId == staleId, ct);
             if (hasSessions)
             {

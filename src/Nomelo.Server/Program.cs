@@ -17,6 +17,7 @@ builder.Services
     .ValidateOnStart();
 
 builder.Services.AddSingleton<ListFileLoader>();
+builder.Services.AddSingleton<ListCache>();
 builder.Services.AddScoped<ListDirectoryScanner>();
 builder.Services.AddHostedService<ListRegistrarHostedService>();
 
