@@ -17,11 +17,14 @@ builder.Services
     .ValidateOnStart();
 
 builder.Services.AddSingleton<ListFileLoader>();
+builder.Services.AddSingleton<ListCache>();
 builder.Services.AddScoped<ListDirectoryScanner>();
 builder.Services.AddHostedService<ListRegistrarHostedService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<Nomelo.Server.Voting.VoteProcessor>();
+builder.Services.AddScoped<Nomelo.Server.Voting.NextPairService>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -59,6 +62,8 @@ app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapListsEndpoints();
 app.MapSessionsEndpoints();
+app.MapVotingEndpoints();
+app.MapShareEndpoints();
 
 app.Run();
 
