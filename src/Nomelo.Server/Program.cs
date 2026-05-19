@@ -63,6 +63,7 @@ app.MapAuthEndpoints();
 app.MapListsEndpoints();
 app.MapSessionsEndpoints();
 app.MapVotingEndpoints();
+app.MapShareEndpoints();
 
 app.Run();
 
