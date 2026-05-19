@@ -24,6 +24,7 @@ builder.Services.AddHostedService<ListRegistrarHostedService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<Nomelo.Server.Voting.VoteProcessor>();
+builder.Services.AddScoped<Nomelo.Server.Voting.NextPairService>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
