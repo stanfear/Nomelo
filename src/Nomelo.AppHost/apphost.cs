@@ -47,4 +47,13 @@ var server = builder
     .WithEnvironment("OIDC__ClientId", "nomelo")
     .WithEnvironment("OIDC__ClientSecret", rauthyClientSecret);
 
+// React (Vite) client. AddViteApp runs `npm run dev` in the working dir and
+// wires VITE_PORT for the proxy. Service discovery passes the server URL via
+// services__server__http__0, which vite.config.ts can pick up in a later pass.
+var client = builder
+    .AddViteApp("client", workingDirectory: "../Nomelo.Client", packageManager: "npm")
+    .WithReference(server)
+    .WaitFor(server)
+    .WithHttpEndpoint(port: 5173, targetPort: 5173, env: "VITE_PORT");
+
 builder.Build().Run();
