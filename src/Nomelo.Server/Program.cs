@@ -62,6 +62,7 @@ app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapListsEndpoints();
 app.MapSessionsEndpoints();
+app.MapVotingEndpoints();
 
 app.Run();
 
