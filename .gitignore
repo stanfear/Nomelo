@@ -19,6 +19,8 @@ build/
 .vite/
 .idea/
 *.tsbuildinfo
+src/Nomelo.Client/vite.config.js
+src/Nomelo.Client/vite.config.d.ts
 npm-debug.log*
 pnpm-debug.log*
 yarn-error.log*
