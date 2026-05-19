@@ -1,0 +1,9 @@
+{
+  "id": "sample",
+  "name": "Sample names",
+  "items": [
+    { "value": "Alice" },
+    { "value": "Bob" },
+    { "value": "Charlie" }
+  ]
+}

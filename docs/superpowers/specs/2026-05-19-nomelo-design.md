@@ -1,4 +1,4 @@
-# NameSelect — Design Document
+# Nomelo — Design Document
 
 **Date:** 2026-05-17  
 **Stack:** ASP.NET Core (C#) · React · PostgreSQL · Docker · Authentik (OIDC)
@@ -7,7 +7,7 @@
 
 ## 1. Problem Statement
 
-NameSelect is a self-hosted web application that helps users select a preferred name from a large list (typically ~12 000 entries) through repeated pairwise comparisons. Users vote on pairs of names, and a smart algorithm surfaces the best names over time. The primary use case is choosing a baby name, but the system is list-agnostic.
+Nomelo is a self-hosted web application that helps users select a preferred name from a large list (typically ~12 000 entries) through repeated pairwise comparisons. Users vote on pairs of names, and a smart algorithm surfaces the best names over time. The primary use case is choosing a baby name, but the system is list-agnostic.
 
 ---
 
@@ -26,9 +26,9 @@ Volume: /data/lists/ → JSON name list files
 ```
 
 A single `.sln` with three projects:
-- `NameSelect.Server` — ASP.NET Core, hosts API + serves React SPA
-- `NameSelect.Client` — React application (built separately, output copied to `wwwroot`)
-- `NameSelect.Shared` — DTOs shared between server and client (optional)
+- `Nomelo.Server` — ASP.NET Core, hosts API + serves React SPA
+- `Nomelo.Client` — React application (built separately, output copied to `wwwroot`)
+- `Nomelo.Shared` — DTOs shared between server and client (optional)
 
 ---
 
@@ -41,7 +41,7 @@ A single `.sln` with three projects:
 
 **Configuration (environment variables):**
 ```
-OIDC__Authority=https://auth.example.com/application/o/nameselect/
+OIDC__Authority=https://auth.example.com/application/o/nomelo/
 OIDC__ClientId=...
 OIDC__ClientSecret=...
 ```
@@ -266,7 +266,7 @@ services:
     build: .
     ports: ["8080:8080"]
     environment:
-      - ConnectionStrings__Default=Host=db;Database=nameselect;Username=ns;Password=${DB_PASSWORD}
+      - ConnectionStrings__Default=Host=db;Database=nomelo;Username=ns;Password=${DB_PASSWORD}
       - OIDC__Authority=${OIDC_AUTHORITY}
       - OIDC__ClientId=${OIDC_CLIENT_ID}
       - OIDC__ClientSecret=${OIDC_CLIENT_SECRET}
@@ -277,7 +277,7 @@ services:
   db:
     image: postgres:16
     environment:
-      - POSTGRES_DB=nameselect
+      - POSTGRES_DB=nomelo
       - POSTGRES_USER=ns
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
