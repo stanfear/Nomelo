@@ -1,18 +1,33 @@
 using Microsoft.EntityFrameworkCore;
 using Nomelo.Server.Data;
 using Nomelo.Server.Data.Entities;
+using Nomelo.Server.Lists;
 using Nomelo.Server.Scoring;
 
 namespace Nomelo.Server.Voting;
 
-public class VoteProcessor(AppDbContext db)
+public class VoteProcessor(AppDbContext db, ListCache cache)
 {
     public async Task Apply(Guid sessionId, string itemA, string itemB, VoteResult result, CancellationToken ct = default)
     {
+        if (string.IsNullOrEmpty(itemA) || string.IsNullOrEmpty(itemB))
+            throw new ArgumentException("itemA and itemB must be non-empty");
+        if (itemA == itemB)
+            throw new ArgumentException("itemA and itemB must be distinct");
+
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
         var session = await db.Sessions.FirstOrDefaultAsync(s => s.Id == sessionId, ct)
                       ?? throw new InvalidOperationException($"session {sessionId} not found");
+
+        if (!cache.TryGet(session.ListId, out var list) || list is null)
+            throw new InvalidOperationException($"list {session.ListId} not loaded");
+
+        var validValues = list.Items.Select(i => i.Value).ToHashSet(StringComparer.Ordinal);
+        if (!validValues.Contains(itemA))
+            throw new ArgumentException($"item '{itemA}' does not belong to list '{session.ListId}'");
+        if (!validValues.Contains(itemB))
+            throw new ArgumentException($"item '{itemB}' does not belong to list '{session.ListId}'");
 
         var stateA = await GetOrCreate(sessionId, itemA, ct);
         var stateB = await GetOrCreate(sessionId, itemB, ct);

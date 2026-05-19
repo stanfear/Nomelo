@@ -11,15 +11,23 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
         Exception exception,
         CancellationToken cancellationToken)
     {
-        logger.LogError(exception, "Unhandled exception on {Path}", httpContext.Request.Path);
+        var env = httpContext.RequestServices.GetRequiredService<IHostEnvironment>();
+        var (status, title) = exception switch
+        {
+            ArgumentException => (StatusCodes.Status400BadRequest, "Invalid request"),
+            _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
+        };
+
+        if (status >= 500)
+            logger.LogError(exception, "Unhandled exception on {Path}", httpContext.Request.Path);
+        else
+            logger.LogWarning(exception, "Client error on {Path}", httpContext.Request.Path);
 
         var problem = new ProblemDetails
         {
-            Status = StatusCodes.Status500InternalServerError,
-            Title = "An unexpected error occurred",
-            Detail = httpContext.RequestServices
-                .GetRequiredService<IHostEnvironment>()
-                .IsDevelopment() ? exception.Message : null,
+            Status = status,
+            Title = title,
+            Detail = env.IsDevelopment() || status < 500 ? exception.Message : null,
             Instance = httpContext.Request.Path
         };
 

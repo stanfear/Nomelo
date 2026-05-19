@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Nomelo.Server.Data;
 using Nomelo.Server.Data.Entities;
+using Nomelo.Server.Lists;
 using Nomelo.Server.Tests.Infrastructure;
 using Nomelo.Server.Voting;
 using Xunit;
@@ -22,6 +23,7 @@ public class VoteProcessorTests : IAsyncLifetime
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddDbContext<AppDbContext>(o => o.UseNpgsql(_pg.ConnectionString));
+        services.AddSingleton<ListCache>();
         services.AddScoped<VoteProcessor>();
         _sp = services.BuildServiceProvider();
 
@@ -36,6 +38,14 @@ public class VoteProcessorTests : IAsyncLifetime
         });
         await db.SaveChangesAsync();
         _listId = listId;
+
+        var cache = _sp.GetRequiredService<ListCache>();
+        cache.Set(new ListFile(listId, "T", new[]
+        {
+            new ListFileItem("Alice", Array.Empty<string>(), null),
+            new ListFileItem("Bob", Array.Empty<string>(), null),
+            new ListFileItem("Carol", Array.Empty<string>(), null)
+        }));
     }
 
     private string _listId = "";
