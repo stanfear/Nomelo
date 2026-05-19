@@ -1,4 +1,4 @@
-# NameSelect Algorithm & Voting API Implementation Plan
+# Nomelo Algorithm & Voting API Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **Depends on Plan 1 (Backend foundation) being merged.**
 
@@ -13,7 +13,7 @@
 ## File Structure
 
 ```
-src/NameSelect.Server/
+src/Nomelo.Server/
 ├── Lists/
 │   └── ListCache.cs                            # new — in-memory items
 ├── Lists/ListRegistrarHostedService.cs         # modified — populate ListCache
@@ -30,13 +30,13 @@ src/NameSelect.Server/
     ├── VotingEndpoints.cs                      # /next-pair, /votes, /results
     └── ShareEndpoints.cs                       # /api/share/{token}
 
-src/NameSelect.Shared/Dtos/
+src/Nomelo.Shared/Dtos/
 ├── PairDto.cs
 ├── VoteRequest.cs
 ├── ResultsDto.cs
 └── RankedItemDto.cs
 
-tests/NameSelect.Server.Tests/
+tests/Nomelo.Server.Tests/
 ├── Scoring/
 │   ├── EloCalculatorTests.cs
 │   ├── WeightCalculatorTests.cs
@@ -62,20 +62,20 @@ tests/NameSelect.Server.Tests/
 We need item-level data at runtime (variants, description) without re-reading JSON on every request. The cache is populated by the existing hosted service from Plan 1.
 
 **Files:**
-- Create: `src/NameSelect.Server/Lists/ListCache.cs`
-- Modify: `src/NameSelect.Server/Lists/ListRegistrarHostedService.cs`
-- Modify: `src/NameSelect.Server/Program.cs`
-- Test: `tests/NameSelect.Server.Tests/Lists/ListCacheTests.cs`
+- Create: `src/Nomelo.Server/Lists/ListCache.cs`
+- Modify: `src/Nomelo.Server/Lists/ListRegistrarHostedService.cs`
+- Modify: `src/Nomelo.Server/Program.cs`
+- Test: `tests/Nomelo.Server.Tests/Lists/ListCacheTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Lists/ListCacheTests.cs`:
+Create `tests/Nomelo.Server.Tests/Lists/ListCacheTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Lists;
+using Nomelo.Server.Lists;
 
-namespace NameSelect.Server.Tests.Lists;
+namespace Nomelo.Server.Tests.Lists;
 
 public class ListCacheTests
 {
@@ -135,12 +135,12 @@ Expected: FAIL (type does not exist).
 
 - [ ] **Step 3: Implement ListCache**
 
-Create `src/NameSelect.Server/Lists/ListCache.cs`:
+Create `src/Nomelo.Server/Lists/ListCache.cs`:
 
 ```csharp
 using System.Collections.Concurrent;
 
-namespace NameSelect.Server.Lists;
+namespace Nomelo.Server.Lists;
 
 public class ListCache
 {
@@ -172,14 +172,14 @@ builder.Services.AddHostedService<ListRegistrarHostedService>();
 
 - [ ] **Step 5: Populate cache from registrar**
 
-In `src/NameSelect.Server/Lists/ListRegistrarHostedService.cs`, inject `ListCache` and populate it. Replace the class with:
+In `src/Nomelo.Server/Lists/ListRegistrarHostedService.cs`, inject `ListCache` and populate it. Replace the class with:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
-using NameSelect.Server.Data.Entities;
+using Nomelo.Server.Data;
+using Nomelo.Server.Data.Entities;
 
-namespace NameSelect.Server.Lists;
+namespace Nomelo.Server.Lists;
 
 public class ListRegistrarHostedService : IHostedService
 {
@@ -266,7 +266,7 @@ Expected: All tests pass (existing + new ListCacheTests).
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/NameSelect.Server/Lists src/NameSelect.Server/Program.cs tests/NameSelect.Server.Tests/Lists/ListCacheTests.cs
+git add src/Nomelo.Server/Lists src/Nomelo.Server/Program.cs tests/Nomelo.Server.Tests/Lists/ListCacheTests.cs
 git commit -m "feat: add in-memory ListCache populated by registrar hosted service"
 ```
 
@@ -275,18 +275,18 @@ git commit -m "feat: add in-memory ListCache populated by registrar hosted servi
 ## Task 2: EloCalculator (pure math, TDD)
 
 **Files:**
-- Create: `src/NameSelect.Server/Scoring/EloCalculator.cs`
-- Test: `tests/NameSelect.Server.Tests/Scoring/EloCalculatorTests.cs`
+- Create: `src/Nomelo.Server/Scoring/EloCalculator.cs`
+- Test: `tests/Nomelo.Server.Tests/Scoring/EloCalculatorTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Scoring/EloCalculatorTests.cs`:
+Create `tests/Nomelo.Server.Tests/Scoring/EloCalculatorTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Scoring;
+using Nomelo.Server.Scoring;
 
-namespace NameSelect.Server.Tests.Scoring;
+namespace Nomelo.Server.Tests.Scoring;
 
 public class EloCalculatorTests
 {
@@ -348,10 +348,10 @@ Expected: FAIL (type does not exist).
 
 - [ ] **Step 3: Implement EloCalculator**
 
-Create `src/NameSelect.Server/Scoring/EloCalculator.cs`:
+Create `src/Nomelo.Server/Scoring/EloCalculator.cs`:
 
 ```csharp
-namespace NameSelect.Server.Scoring;
+namespace Nomelo.Server.Scoring;
 
 public record EloUpdate(double NewEloA, double NewEloB);
 
@@ -385,7 +385,7 @@ Expected: 9 passed (6 facts + 6 theory rows minus overlap).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Server/Scoring/EloCalculator.cs tests/NameSelect.Server.Tests/Scoring/EloCalculatorTests.cs
+git add src/Nomelo.Server/Scoring/EloCalculator.cs tests/Nomelo.Server.Tests/Scoring/EloCalculatorTests.cs
 git commit -m "feat: add EloCalculator with K-factor brackets and per-item asymmetric updates"
 ```
 
@@ -394,18 +394,18 @@ git commit -m "feat: add EloCalculator with K-factor brackets and per-item asymm
 ## Task 3: WeightCalculator (TDD)
 
 **Files:**
-- Create: `src/NameSelect.Server/Scoring/WeightCalculator.cs`
-- Test: `tests/NameSelect.Server.Tests/Scoring/WeightCalculatorTests.cs`
+- Create: `src/Nomelo.Server/Scoring/WeightCalculator.cs`
+- Test: `tests/Nomelo.Server.Tests/Scoring/WeightCalculatorTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Scoring/WeightCalculatorTests.cs`:
+Create `tests/Nomelo.Server.Tests/Scoring/WeightCalculatorTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Scoring;
+using Nomelo.Server.Scoring;
 
-namespace NameSelect.Server.Tests.Scoring;
+namespace Nomelo.Server.Tests.Scoring;
 
 public class WeightCalculatorTests
 {
@@ -445,10 +445,10 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement WeightCalculator**
 
-Create `src/NameSelect.Server/Scoring/WeightCalculator.cs`:
+Create `src/Nomelo.Server/Scoring/WeightCalculator.cs`:
 
 ```csharp
-namespace NameSelect.Server.Scoring;
+namespace Nomelo.Server.Scoring;
 
 public static class WeightCalculator
 {
@@ -471,7 +471,7 @@ Expected: 7 passed.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Server/Scoring/WeightCalculator.cs tests/NameSelect.Server.Tests/Scoring/WeightCalculatorTests.cs
+git add src/Nomelo.Server/Scoring/WeightCalculator.cs tests/Nomelo.Server.Tests/Scoring/WeightCalculatorTests.cs
 git commit -m "feat: add WeightCalculator with banned/unseen/preferred/neutral/cold tiers"
 ```
 
@@ -482,18 +482,18 @@ git commit -m "feat: add WeightCalculator with banned/unseen/preferred/neutral/c
 Pure-ish: takes a list of items with their current `(elo, timesShown, isBanned)` state, plus the last-N pair history, plus a `Random` seed for determinism, and returns a `(itemA, itemB)` or `null` if no pair can be formed.
 
 **Files:**
-- Create: `src/NameSelect.Server/Scoring/PairSelector.cs`
-- Test: `tests/NameSelect.Server.Tests/Scoring/PairSelectorTests.cs`
+- Create: `src/Nomelo.Server/Scoring/PairSelector.cs`
+- Test: `tests/Nomelo.Server.Tests/Scoring/PairSelectorTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Scoring/PairSelectorTests.cs`:
+Create `tests/Nomelo.Server.Tests/Scoring/PairSelectorTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Scoring;
+using Nomelo.Server.Scoring;
 
-namespace NameSelect.Server.Tests.Scoring;
+namespace Nomelo.Server.Tests.Scoring;
 
 public class PairSelectorTests
 {
@@ -595,10 +595,10 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement PairSelector**
 
-Create `src/NameSelect.Server/Scoring/PairSelector.cs`:
+Create `src/Nomelo.Server/Scoring/PairSelector.cs`:
 
 ```csharp
-namespace NameSelect.Server.Scoring;
+namespace Nomelo.Server.Scoring;
 
 public record ItemSnapshot(string Id, double Elo, int TimesShown, bool IsBanned);
 
@@ -667,7 +667,7 @@ Expected: 6 passed.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Server/Scoring/PairSelector.cs tests/NameSelect.Server.Tests/Scoring/PairSelectorTests.cs
+git add src/Nomelo.Server/Scoring/PairSelector.cs tests/Nomelo.Server.Tests/Scoring/PairSelectorTests.cs
 git commit -m "feat: add PairSelector with weighted sampling and anti-repetition window"
 ```
 
@@ -678,19 +678,19 @@ git commit -m "feat: add PairSelector with weighted sampling and anti-repetition
 An upset is when the lower-ELO item wins a `prefer_x` vote, or a `like_both` occurs when the ELO gap > 50.
 
 **Files:**
-- Create: `src/NameSelect.Server/Scoring/UpsetDetector.cs`
-- Test: `tests/NameSelect.Server.Tests/Scoring/UpsetDetectorTests.cs`
+- Create: `src/Nomelo.Server/Scoring/UpsetDetector.cs`
+- Test: `tests/Nomelo.Server.Tests/Scoring/UpsetDetectorTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Scoring/UpsetDetectorTests.cs`:
+Create `tests/Nomelo.Server.Tests/Scoring/UpsetDetectorTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Data.Entities;
-using NameSelect.Server.Scoring;
+using Nomelo.Server.Data.Entities;
+using Nomelo.Server.Scoring;
 
-namespace NameSelect.Server.Tests.Scoring;
+namespace Nomelo.Server.Tests.Scoring;
 
 public class UpsetDetectorTests
 {
@@ -730,12 +730,12 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement UpsetDetector**
 
-Create `src/NameSelect.Server/Scoring/UpsetDetector.cs`:
+Create `src/Nomelo.Server/Scoring/UpsetDetector.cs`:
 
 ```csharp
-using NameSelect.Server.Data.Entities;
+using Nomelo.Server.Data.Entities;
 
-namespace NameSelect.Server.Scoring;
+namespace Nomelo.Server.Scoring;
 
 public static class UpsetDetector
 {
@@ -759,7 +759,7 @@ Expected: 8 passed.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Server/Scoring/UpsetDetector.cs tests/NameSelect.Server.Tests/Scoring/UpsetDetectorTests.cs
+git add src/Nomelo.Server/Scoring/UpsetDetector.cs tests/Nomelo.Server.Tests/Scoring/UpsetDetectorTests.cs
 git commit -m "feat: add UpsetDetector with prefer/like_both rules"
 ```
 
@@ -770,24 +770,24 @@ git commit -m "feat: add UpsetDetector with prefer/like_both rules"
 Applies a vote within a transaction: lazily creates `item_states` rows, updates ELO/`times_shown`/`is_banned`, writes the `votes` row, and bumps `voting_sessions.updated_at`.
 
 **Files:**
-- Create: `src/NameSelect.Server/Voting/VoteProcessor.cs`
-- Test: `tests/NameSelect.Server.Tests/Voting/VoteProcessorTests.cs`
+- Create: `src/Nomelo.Server/Voting/VoteProcessor.cs`
+- Test: `tests/Nomelo.Server.Tests/Voting/VoteProcessorTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Voting/VoteProcessorTests.cs`:
+Create `tests/Nomelo.Server.Tests/Voting/VoteProcessorTests.cs`:
 
 ```csharp
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NameSelect.Server.Data;
-using NameSelect.Server.Data.Entities;
-using NameSelect.Server.Tests.Infrastructure;
-using NameSelect.Server.Voting;
+using Nomelo.Server.Data;
+using Nomelo.Server.Data.Entities;
+using Nomelo.Server.Tests.Infrastructure;
+using Nomelo.Server.Voting;
 using Xunit;
 
-namespace NameSelect.Server.Tests.Voting;
+namespace Nomelo.Server.Tests.Voting;
 
 [Collection("postgres")]
 public class VoteProcessorTests : IAsyncLifetime
@@ -933,15 +933,15 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement VoteProcessor**
 
-Create `src/NameSelect.Server/Voting/VoteProcessor.cs`:
+Create `src/Nomelo.Server/Voting/VoteProcessor.cs`:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
-using NameSelect.Server.Data.Entities;
-using NameSelect.Server.Scoring;
+using Nomelo.Server.Data;
+using Nomelo.Server.Data.Entities;
+using Nomelo.Server.Scoring;
 
-namespace NameSelect.Server.Voting;
+namespace Nomelo.Server.Voting;
 
 public class VoteProcessor
 {
@@ -1026,7 +1026,7 @@ K-factor uses `TimesShown - 1` so the K reflects the state *before* this vote.
 In `Program.cs`, add after the auth registration:
 
 ```csharp
-builder.Services.AddScoped<NameSelect.Server.Voting.VoteProcessor>();
+builder.Services.AddScoped<Nomelo.Server.Voting.VoteProcessor>();
 ```
 
 - [ ] **Step 5: Run tests**
@@ -1037,7 +1037,7 @@ Expected: 5 passed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Server/Voting/VoteProcessor.cs src/NameSelect.Server/Program.cs tests/NameSelect.Server.Tests/Voting/VoteProcessorTests.cs
+git add src/Nomelo.Server/Voting/VoteProcessor.cs src/Nomelo.Server/Program.cs tests/Nomelo.Server.Tests/Voting/VoteProcessorTests.cs
 git commit -m "feat: add VoteProcessor with transactional ELO update, ban handling, and lazy item_states"
 ```
 
@@ -1048,15 +1048,15 @@ git commit -m "feat: add VoteProcessor with transactional ELO update, ban handli
 Combines `ListCache`, `item_states`, and recent votes to draw a pair. Returns a DTO with primary `value`, `variants`, `description` per item.
 
 **Files:**
-- Create: `src/NameSelect.Shared/Dtos/PairDto.cs`
-- Create: `src/NameSelect.Server/Voting/NextPairService.cs`
+- Create: `src/Nomelo.Shared/Dtos/PairDto.cs`
+- Create: `src/Nomelo.Server/Voting/NextPairService.cs`
 
 - [ ] **Step 1: Write PairDto**
 
-Create `src/NameSelect.Shared/Dtos/PairDto.cs`:
+Create `src/Nomelo.Shared/Dtos/PairDto.cs`:
 
 ```csharp
-namespace NameSelect.Shared.Dtos;
+namespace Nomelo.Shared.Dtos;
 
 public record PairItemDto(string Value, IReadOnlyList<string> Variants, string? Description);
 
@@ -1065,16 +1065,16 @@ public record PairDto(PairItemDto A, PairItemDto B);
 
 - [ ] **Step 2: Write NextPairService**
 
-Create `src/NameSelect.Server/Voting/NextPairService.cs`:
+Create `src/Nomelo.Server/Voting/NextPairService.cs`:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
-using NameSelect.Server.Lists;
-using NameSelect.Server.Scoring;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Data;
+using Nomelo.Server.Lists;
+using Nomelo.Server.Scoring;
+using Nomelo.Shared.Dtos;
 
-namespace NameSelect.Server.Voting;
+namespace Nomelo.Server.Voting;
 
 public class NextPairService
 {
@@ -1136,7 +1136,7 @@ public class NextPairService
 In `Program.cs`, add:
 
 ```csharp
-builder.Services.AddScoped<NameSelect.Server.Voting.NextPairService>();
+builder.Services.AddScoped<Nomelo.Server.Voting.NextPairService>();
 ```
 
 - [ ] **Step 4: Verify build**
@@ -1147,7 +1147,7 @@ Expected: Build succeeded.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Shared/Dtos/PairDto.cs src/NameSelect.Server/Voting/NextPairService.cs src/NameSelect.Server/Program.cs
+git add src/Nomelo.Shared/Dtos/PairDto.cs src/Nomelo.Server/Voting/NextPairService.cs src/Nomelo.Server/Program.cs
 git commit -m "feat: add NextPairService that draws a pair from ListCache + item_states"
 ```
 
@@ -1156,17 +1156,17 @@ git commit -m "feat: add NextPairService that draws a pair from ListCache + item
 ## Task 8: ResultsBuilder + DTOs
 
 **Files:**
-- Create: `src/NameSelect.Shared/Dtos/ResultsDto.cs`
-- Create: `src/NameSelect.Shared/Dtos/RankedItemDto.cs`
-- Create: `src/NameSelect.Server/Scoring/ResultsBuilder.cs`
-- Test: `tests/NameSelect.Server.Tests/Scoring/ResultsBuilderTests.cs`
+- Create: `src/Nomelo.Shared/Dtos/ResultsDto.cs`
+- Create: `src/Nomelo.Shared/Dtos/RankedItemDto.cs`
+- Create: `src/Nomelo.Server/Scoring/ResultsBuilder.cs`
+- Test: `tests/Nomelo.Server.Tests/Scoring/ResultsBuilderTests.cs`
 
 - [ ] **Step 1: Write DTOs**
 
-Create `src/NameSelect.Shared/Dtos/RankedItemDto.cs`:
+Create `src/Nomelo.Shared/Dtos/RankedItemDto.cs`:
 
 ```csharp
-namespace NameSelect.Shared.Dtos;
+namespace Nomelo.Shared.Dtos;
 
 public record RankedItemDto(
     int Rank,
@@ -1177,10 +1177,10 @@ public record RankedItemDto(
     bool IsBanned);
 ```
 
-Create `src/NameSelect.Shared/Dtos/ResultsDto.cs`:
+Create `src/Nomelo.Shared/Dtos/ResultsDto.cs`:
 
 ```csharp
-namespace NameSelect.Shared.Dtos;
+namespace Nomelo.Shared.Dtos;
 
 public record ResultsDto(
     Guid SessionId,
@@ -1194,14 +1194,14 @@ public record ResultsDto(
 
 - [ ] **Step 2: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Scoring/ResultsBuilderTests.cs`:
+Create `tests/Nomelo.Server.Tests/Scoring/ResultsBuilderTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Lists;
-using NameSelect.Server.Scoring;
+using Nomelo.Server.Lists;
+using Nomelo.Server.Scoring;
 
-namespace NameSelect.Server.Tests.Scoring;
+namespace Nomelo.Server.Tests.Scoring;
 
 public class ResultsBuilderTests
 {
@@ -1268,13 +1268,13 @@ Expected: FAIL.
 
 - [ ] **Step 4: Implement ResultsBuilder**
 
-Create `src/NameSelect.Server/Scoring/ResultsBuilder.cs`:
+Create `src/Nomelo.Server/Scoring/ResultsBuilder.cs`:
 
 ```csharp
-using NameSelect.Server.Lists;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Lists;
+using Nomelo.Shared.Dtos;
 
-namespace NameSelect.Server.Scoring;
+namespace Nomelo.Server.Scoring;
 
 public static class ResultsBuilder
 {
@@ -1321,7 +1321,7 @@ Expected: 3 passed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Shared/Dtos src/NameSelect.Server/Scoring/ResultsBuilder.cs tests/NameSelect.Server.Tests/Scoring/ResultsBuilderTests.cs
+git add src/Nomelo.Shared/Dtos src/Nomelo.Server/Scoring/ResultsBuilder.cs tests/Nomelo.Server.Tests/Scoring/ResultsBuilderTests.cs
 git commit -m "feat: add ResultsBuilder producing ranked DTOs with banned items separated"
 ```
 
@@ -1332,18 +1332,18 @@ git commit -m "feat: add ResultsBuilder producing ranked DTOs with banned items 
 Computes the count of consecutive non-upsets ending at the latest vote. The `/results` endpoint uses this to set `StabilityReached`.
 
 **Files:**
-- Create: `src/NameSelect.Server/Scoring/StabilityCounter.cs`
-- Test: `tests/NameSelect.Server.Tests/Scoring/StabilityCounterTests.cs`
+- Create: `src/Nomelo.Server/Scoring/StabilityCounter.cs`
+- Test: `tests/Nomelo.Server.Tests/Scoring/StabilityCounterTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Scoring/StabilityCounterTests.cs`:
+Create `tests/Nomelo.Server.Tests/Scoring/StabilityCounterTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Scoring;
+using Nomelo.Server.Scoring;
 
-namespace NameSelect.Server.Tests.Scoring;
+namespace Nomelo.Server.Tests.Scoring;
 
 public class StabilityCounterTests
 {
@@ -1377,10 +1377,10 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement StabilityCounter**
 
-Create `src/NameSelect.Server/Scoring/StabilityCounter.cs`:
+Create `src/Nomelo.Server/Scoring/StabilityCounter.cs`:
 
 ```csharp
-namespace NameSelect.Server.Scoring;
+namespace Nomelo.Server.Scoring;
 
 public static class StabilityCounter
 {
@@ -1407,7 +1407,7 @@ Expected: 4 passed.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Server/Scoring/StabilityCounter.cs tests/NameSelect.Server.Tests/Scoring/StabilityCounterTests.cs
+git add src/Nomelo.Server/Scoring/StabilityCounter.cs tests/Nomelo.Server.Tests/Scoring/StabilityCounterTests.cs
 git commit -m "feat: add StabilityCounter helper for consecutive non-upset detection"
 ```
 
@@ -1418,17 +1418,17 @@ git commit -m "feat: add StabilityCounter helper for consecutive non-upset detec
 Endpoints: `GET /api/sessions/{id}/next-pair`, `POST /api/sessions/{id}/votes`, `GET /api/sessions/{id}/results`.
 
 **Files:**
-- Create: `src/NameSelect.Shared/Dtos/VoteRequest.cs`
-- Create: `src/NameSelect.Server/Endpoints/VotingEndpoints.cs`
-- Modify: `src/NameSelect.Server/Program.cs`
-- Test: `tests/NameSelect.Server.Tests/Endpoints/VotingEndpointsTests.cs`
+- Create: `src/Nomelo.Shared/Dtos/VoteRequest.cs`
+- Create: `src/Nomelo.Server/Endpoints/VotingEndpoints.cs`
+- Modify: `src/Nomelo.Server/Program.cs`
+- Test: `tests/Nomelo.Server.Tests/Endpoints/VotingEndpointsTests.cs`
 
 - [ ] **Step 1: Write VoteRequest DTO**
 
-Create `src/NameSelect.Shared/Dtos/VoteRequest.cs`:
+Create `src/Nomelo.Shared/Dtos/VoteRequest.cs`:
 
 ```csharp
-namespace NameSelect.Shared.Dtos;
+namespace Nomelo.Shared.Dtos;
 
 public record VoteRequest(string ItemA, string ItemB, string Result);
 ```
@@ -1437,23 +1437,23 @@ public record VoteRequest(string ItemA, string ItemB, string Result);
 
 - [ ] **Step 2: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Endpoints/VotingEndpointsTests.cs`:
+Create `tests/Nomelo.Server.Tests/Endpoints/VotingEndpointsTests.cs`:
 
 ```csharp
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using NameSelect.Server.Tests.Infrastructure;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Tests.Infrastructure;
+using Nomelo.Shared.Dtos;
 using Xunit;
 
-namespace NameSelect.Server.Tests.Endpoints;
+namespace Nomelo.Server.Tests.Endpoints;
 
 [Collection("postgres")]
 public class VotingEndpointsTests : IAsyncLifetime
 {
     private readonly PostgresFixture _pg;
-    private NameSelectAppFactory _factory = default!;
+    private NomeloAppFactory _factory = default!;
     private string _listsDir = "";
 
     public VotingEndpointsTests(PostgresFixture pg) => _pg = pg;
@@ -1468,7 +1468,7 @@ public class VotingEndpointsTests : IAsyncLifetime
                  { "value": "Bob" },
                  { "value": "Carol" }
             ] }""");
-        _factory = new NameSelectAppFactory
+        _factory = new NomeloAppFactory
         {
             ConnectionString = _pg.ConnectionString,
             ListsDirectory = _listsDir
@@ -1570,19 +1570,19 @@ Expected: FAIL (endpoints not mapped).
 
 - [ ] **Step 4: Implement VotingEndpoints**
 
-Create `src/NameSelect.Server/Endpoints/VotingEndpoints.cs`:
+Create `src/Nomelo.Server/Endpoints/VotingEndpoints.cs`:
 
 ```csharp
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
-using NameSelect.Server.Data.Entities;
-using NameSelect.Server.Lists;
-using NameSelect.Server.Scoring;
-using NameSelect.Server.Voting;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Data;
+using Nomelo.Server.Data.Entities;
+using Nomelo.Server.Lists;
+using Nomelo.Server.Scoring;
+using Nomelo.Server.Voting;
+using Nomelo.Shared.Dtos;
 
-namespace NameSelect.Server.Endpoints;
+namespace Nomelo.Server.Endpoints;
 
 public static class VotingEndpoints
 {
@@ -1677,7 +1677,7 @@ public static class VotingEndpoints
 
 - [ ] **Step 5: Wire endpoint in Program.cs**
 
-Add `using NameSelect.Server.Endpoints;` if not present and add:
+Add `using Nomelo.Server.Endpoints;` if not present and add:
 
 ```csharp
 app.MapVotingEndpoints();
@@ -1693,7 +1693,7 @@ Expected: 5 passed.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/NameSelect.Shared/Dtos/VoteRequest.cs src/NameSelect.Server/Endpoints/VotingEndpoints.cs src/NameSelect.Server/Program.cs tests/NameSelect.Server.Tests/Endpoints/VotingEndpointsTests.cs
+git add src/Nomelo.Shared/Dtos/VoteRequest.cs src/Nomelo.Server/Endpoints/VotingEndpoints.cs src/Nomelo.Server/Program.cs tests/Nomelo.Server.Tests/Endpoints/VotingEndpointsTests.cs
 git commit -m "feat: add /next-pair, /votes, /results endpoints with ownership checks"
 ```
 
@@ -1704,29 +1704,29 @@ git commit -m "feat: add /next-pair, /votes, /results endpoints with ownership c
 `GET /api/share/{token}` returns the same `ResultsDto` without auth.
 
 **Files:**
-- Create: `src/NameSelect.Server/Endpoints/ShareEndpoints.cs`
-- Modify: `src/NameSelect.Server/Program.cs`
-- Test: `tests/NameSelect.Server.Tests/Endpoints/ShareEndpointsTests.cs`
+- Create: `src/Nomelo.Server/Endpoints/ShareEndpoints.cs`
+- Modify: `src/Nomelo.Server/Program.cs`
+- Test: `tests/Nomelo.Server.Tests/Endpoints/ShareEndpointsTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Endpoints/ShareEndpointsTests.cs`:
+Create `tests/Nomelo.Server.Tests/Endpoints/ShareEndpointsTests.cs`:
 
 ```csharp
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using NameSelect.Server.Tests.Infrastructure;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Tests.Infrastructure;
+using Nomelo.Shared.Dtos;
 using Xunit;
 
-namespace NameSelect.Server.Tests.Endpoints;
+namespace Nomelo.Server.Tests.Endpoints;
 
 [Collection("postgres")]
 public class ShareEndpointsTests : IAsyncLifetime
 {
     private readonly PostgresFixture _pg;
-    private NameSelectAppFactory _factory = default!;
+    private NomeloAppFactory _factory = default!;
     private string _listsDir = "";
 
     public ShareEndpointsTests(PostgresFixture pg) => _pg = pg;
@@ -1737,7 +1737,7 @@ public class ShareEndpointsTests : IAsyncLifetime
         Directory.CreateDirectory(_listsDir);
         File.WriteAllText(Path.Combine(_listsDir, "a.json"),
             """{ "id": "a", "name": "A", "items": [{ "value": "x" }, { "value": "y" }] }""");
-        _factory = new NameSelectAppFactory
+        _factory = new NomeloAppFactory
         {
             ConnectionString = _pg.ConnectionString,
             ListsDirectory = _listsDir
@@ -1787,14 +1787,14 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement ShareEndpoints**
 
-Create `src/NameSelect.Server/Endpoints/ShareEndpoints.cs`:
+Create `src/Nomelo.Server/Endpoints/ShareEndpoints.cs`:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
-using NameSelect.Server.Lists;
+using Nomelo.Server.Data;
+using Nomelo.Server.Lists;
 
-namespace NameSelect.Server.Endpoints;
+namespace Nomelo.Server.Endpoints;
 
 public static class ShareEndpoints
 {
@@ -1833,7 +1833,7 @@ Expected: All tests pass.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/NameSelect.Server/Endpoints/ShareEndpoints.cs src/NameSelect.Server/Program.cs tests/NameSelect.Server.Tests/Endpoints/ShareEndpointsTests.cs
+git add src/Nomelo.Server/Endpoints/ShareEndpoints.cs src/Nomelo.Server/Program.cs tests/Nomelo.Server.Tests/Endpoints/ShareEndpointsTests.cs
 git commit -m "feat: add public GET /api/share/{token} endpoint for read-only results"
 ```
 
@@ -1844,26 +1844,26 @@ git commit -m "feat: add public GET /api/share/{token} endpoint for read-only re
 Verify the algorithm produces sensible rankings over a longer run.
 
 **Files:**
-- Test: `tests/NameSelect.Server.Tests/Endpoints/EndToEndSmokeTests.cs`
+- Test: `tests/Nomelo.Server.Tests/Endpoints/EndToEndSmokeTests.cs`
 
 - [ ] **Step 1: Write the test**
 
-Create `tests/NameSelect.Server.Tests/Endpoints/EndToEndSmokeTests.cs`:
+Create `tests/Nomelo.Server.Tests/Endpoints/EndToEndSmokeTests.cs`:
 
 ```csharp
 using System.Net.Http.Json;
 using FluentAssertions;
-using NameSelect.Server.Tests.Infrastructure;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Tests.Infrastructure;
+using Nomelo.Shared.Dtos;
 using Xunit;
 
-namespace NameSelect.Server.Tests.Endpoints;
+namespace Nomelo.Server.Tests.Endpoints;
 
 [Collection("postgres")]
 public class EndToEndSmokeTests : IAsyncLifetime
 {
     private readonly PostgresFixture _pg;
-    private NameSelectAppFactory _factory = default!;
+    private NomeloAppFactory _factory = default!;
     private string _listsDir = "";
 
     public EndToEndSmokeTests(PostgresFixture pg) => _pg = pg;
@@ -1877,7 +1877,7 @@ public class EndToEndSmokeTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(_listsDir, "a.json"),
             $"{{ \"id\": \"a\", \"name\": \"A\", \"items\": [{items}] }}");
 
-        _factory = new NameSelectAppFactory
+        _factory = new NomeloAppFactory
         {
             ConnectionString = _pg.ConnectionString,
             ListsDirectory = _listsDir
@@ -1923,7 +1923,7 @@ Expected: PASS.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add tests/NameSelect.Server.Tests/Endpoints/EndToEndSmokeTests.cs
+git add tests/Nomelo.Server.Tests/Endpoints/EndToEndSmokeTests.cs
 git commit -m "test: add end-to-end smoke test verifying favourite item ranks first"
 ```
 
@@ -1951,7 +1951,7 @@ git commit -m "test: add end-to-end smoke test verifying favourite item ranks fi
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-18-nameselect-algorithm-and-voting-api.md`. Two execution options:
+Plan complete and saved to `docs/superpowers/plans/2026-05-18-nomelo-algorithm-and-voting-api.md`. Two execution options:
 
 1. **Subagent-Driven (recommended)** — fresh subagent per task, review between tasks, fast iteration.
 2. **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints.

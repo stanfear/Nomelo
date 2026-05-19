@@ -1,10 +1,10 @@
-# NameSelect Frontend Implementation Plan
+# Nomelo Frontend Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **Depends on Plan 1 + Plan 2 (backend endpoints reachable).**
 
 **Goal:** Build the React SPA covering the four screens (Home, Voting, Results, Shared Results), wire it to the backend, configure SPA fallback so the ASP.NET server serves it from `wwwroot`.
 
-**Architecture:** Vite + TypeScript React app under `src/NameSelect.Client/`. Production build outputs to `src/NameSelect.Server/wwwroot/`. Dev server proxies `/api`, `/login`, `/logout`, `/signin-oidc` to the backend on port 5000. Routing via React Router. State management kept local — no Redux/Zustand; React Query (`@tanstack/react-query`) handles server state and caching. Cookie-based auth, so the frontend never touches tokens; a 401 from any API call triggers a redirect to `/login?returnUrl=...`. Component tests with Vitest + React Testing Library.
+**Architecture:** Vite + TypeScript React app under `src/Nomelo.Client/`. Production build outputs to `src/Nomelo.Server/wwwroot/`. Dev server proxies `/api`, `/login`, `/logout`, `/signin-oidc` to the backend on port 5000. Routing via React Router. State management kept local — no Redux/Zustand; React Query (`@tanstack/react-query`) handles server state and caching. Cookie-based auth, so the frontend never touches tokens; a 401 from any API call triggers a redirect to `/login?returnUrl=...`. Component tests with Vitest + React Testing Library.
 
 **Tech Stack:** React 18, TypeScript 5, Vite 5, React Router 6, @tanstack/react-query 5, Vitest, @testing-library/react, MSW for API mocking in tests.
 
@@ -13,7 +13,7 @@
 ## File Structure
 
 ```
-src/NameSelect.Client/
+src/Nomelo.Client/
 ├── package.json
 ├── tsconfig.json
 ├── tsconfig.node.json
@@ -67,31 +67,31 @@ src/NameSelect.Client/
 ## Task 1: Vite + React + TS scaffolding
 
 **Files:**
-- Create: `src/NameSelect.Client/package.json`
-- Create: `src/NameSelect.Client/tsconfig.json`
-- Create: `src/NameSelect.Client/tsconfig.node.json`
-- Create: `src/NameSelect.Client/vite.config.ts`
-- Create: `src/NameSelect.Client/index.html`
-- Create: `src/NameSelect.Client/src/main.tsx`
-- Create: `src/NameSelect.Client/src/App.tsx`
-- Create: `src/NameSelect.Client/src/styles/global.css`
-- Create: `src/NameSelect.Client/public/favicon.svg`
-- Modify: `src/NameSelect.Client/NameSelect.Client.csproj` (Plan 1 placeholder → real build target)
+- Create: `src/Nomelo.Client/package.json`
+- Create: `src/Nomelo.Client/tsconfig.json`
+- Create: `src/Nomelo.Client/tsconfig.node.json`
+- Create: `src/Nomelo.Client/vite.config.ts`
+- Create: `src/Nomelo.Client/index.html`
+- Create: `src/Nomelo.Client/src/main.tsx`
+- Create: `src/Nomelo.Client/src/App.tsx`
+- Create: `src/Nomelo.Client/src/styles/global.css`
+- Create: `src/Nomelo.Client/public/favicon.svg`
+- Modify: `src/Nomelo.Client/Nomelo.Client.csproj` (Plan 1 placeholder → real build target)
 
 - [ ] **Step 1: Delete the Class Library placeholder content**
 
 ```bash
-cd "C:\Users\TristanROCHE\Documents\Projet Perso\NameSelect/src/NameSelect.Client"
+cd "C:\Users\TristanROCHE\Documents\Projet Perso\Nomelo/src/Nomelo.Client"
 rm -f Class1.cs
 ```
 
 - [ ] **Step 2: Write package.json**
 
-Create `src/NameSelect.Client/package.json`:
+Create `src/Nomelo.Client/package.json`:
 
 ```json
 {
-  "name": "nameselect-client",
+  "name": "nomelo-client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -126,7 +126,7 @@ Create `src/NameSelect.Client/package.json`:
 
 - [ ] **Step 3: Write tsconfig files**
 
-Create `src/NameSelect.Client/tsconfig.json`:
+Create `src/Nomelo.Client/tsconfig.json`:
 
 ```json
 {
@@ -153,7 +153,7 @@ Create `src/NameSelect.Client/tsconfig.json`:
 }
 ```
 
-Create `src/NameSelect.Client/tsconfig.node.json`:
+Create `src/Nomelo.Client/tsconfig.node.json`:
 
 ```json
 {
@@ -171,7 +171,7 @@ Create `src/NameSelect.Client/tsconfig.node.json`:
 
 - [ ] **Step 4: Write vite.config.ts**
 
-Create `src/NameSelect.Client/vite.config.ts`:
+Create `src/Nomelo.Client/vite.config.ts`:
 
 ```ts
 import { defineConfig } from "vite";
@@ -181,7 +181,7 @@ import path from "node:path";
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: path.resolve(__dirname, "../NameSelect.Server/wwwroot"),
+    outDir: path.resolve(__dirname, "../Nomelo.Server/wwwroot"),
     emptyOutDir: true,
   },
   server: {
@@ -199,7 +199,7 @@ export default defineConfig({
 
 - [ ] **Step 5: Write index.html**
 
-Create `src/NameSelect.Client/index.html`:
+Create `src/Nomelo.Client/index.html`:
 
 ```html
 <!doctype html>
@@ -208,7 +208,7 @@ Create `src/NameSelect.Client/index.html`:
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NameSelect</title>
+    <title>Nomelo</title>
   </head>
   <body>
     <div id="root"></div>
@@ -219,7 +219,7 @@ Create `src/NameSelect.Client/index.html`:
 
 - [ ] **Step 6: Write minimal App + main**
 
-Create `src/NameSelect.Client/src/main.tsx`:
+Create `src/Nomelo.Client/src/main.tsx`:
 
 ```tsx
 import React from "react";
@@ -244,15 +244,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 );
 ```
 
-Create `src/NameSelect.Client/src/App.tsx`:
+Create `src/Nomelo.Client/src/App.tsx`:
 
 ```tsx
 export default function App() {
-  return <div>NameSelect</div>;
+  return <div>Nomelo</div>;
 }
 ```
 
-Create `src/NameSelect.Client/src/styles/global.css`:
+Create `src/Nomelo.Client/src/styles/global.css`:
 
 ```css
 :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
@@ -260,15 +260,15 @@ Create `src/NameSelect.Client/src/styles/global.css`:
 body { margin: 0; }
 ```
 
-Create `src/NameSelect.Client/public/favicon.svg`:
+Create `src/Nomelo.Client/public/favicon.svg`:
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="#3b82f6"/></svg>
 ```
 
-- [ ] **Step 7: Make NameSelect.Client.csproj build the React app**
+- [ ] **Step 7: Make Nomelo.Client.csproj build the React app**
 
-Replace `src/NameSelect.Client/NameSelect.Client.csproj` with:
+Replace `src/Nomelo.Client/Nomelo.Client.csproj` with:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -299,7 +299,7 @@ The csproj remains an empty .NET project (it isn't referenced by Server) but `do
 - [ ] **Step 8: Install dependencies and verify**
 
 ```bash
-cd src/NameSelect.Client
+cd src/Nomelo.Client
 npm install
 npm run build
 ```
@@ -308,12 +308,12 @@ Expected: `wwwroot/index.html` and `wwwroot/assets/*` produced.
 
 - [ ] **Step 9: Add a .gitignore entry for node_modules and dist**
 
-Verify root `.gitignore` already contains `node_modules/` and `src/NameSelect.Server/wwwroot/`. From Plan 1 it should. If not, add them.
+Verify root `.gitignore` already contains `node_modules/` and `src/Nomelo.Server/wwwroot/`. From Plan 1 it should. If not, add them.
 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add src/NameSelect.Client
+git add src/Nomelo.Client
 git commit -m "feat: scaffold React + Vite + TS client with build output to Server/wwwroot"
 ```
 
@@ -322,12 +322,12 @@ git commit -m "feat: scaffold React + Vite + TS client with build output to Serv
 ## Task 2: API client + types
 
 **Files:**
-- Create: `src/NameSelect.Client/src/api/types.ts`
-- Create: `src/NameSelect.Client/src/api/client.ts`
+- Create: `src/Nomelo.Client/src/api/types.ts`
+- Create: `src/Nomelo.Client/src/api/client.ts`
 
 - [ ] **Step 1: Write types mirroring Shared DTOs**
 
-Create `src/NameSelect.Client/src/api/types.ts`:
+Create `src/Nomelo.Client/src/api/types.ts`:
 
 ```ts
 export interface ListDto {
@@ -403,7 +403,7 @@ export interface MeDto {
 
 - [ ] **Step 2: Write the fetch client**
 
-Create `src/NameSelect.Client/src/api/client.ts`:
+Create `src/Nomelo.Client/src/api/client.ts`:
 
 ```ts
 export class UnauthorizedError extends Error {
@@ -451,7 +451,7 @@ Expected: succeeds.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/api
+git add src/Nomelo.Client/src/api
 git commit -m "feat(client): add typed API DTOs and fetch wrapper with 401 handling"
 ```
 
@@ -460,11 +460,11 @@ git commit -m "feat(client): add typed API DTOs and fetch wrapper with 401 handl
 ## Task 3: API hooks (React Query)
 
 **Files:**
-- Create: `src/NameSelect.Client/src/api/hooks.ts`
+- Create: `src/Nomelo.Client/src/api/hooks.ts`
 
 - [ ] **Step 1: Write hooks**
 
-Create `src/NameSelect.Client/src/api/hooks.ts`:
+Create `src/Nomelo.Client/src/api/hooks.ts`:
 
 ```ts
 import {
@@ -568,7 +568,7 @@ Expected: succeeds.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/api/hooks.ts
+git add src/Nomelo.Client/src/api/hooks.ts
 git commit -m "feat(client): add React Query hooks for lists, sessions, voting, results, share"
 ```
 
@@ -577,12 +577,12 @@ git commit -m "feat(client): add React Query hooks for lists, sessions, voting, 
 ## Task 4: AuthGate + global 401 handling
 
 **Files:**
-- Create: `src/NameSelect.Client/src/auth/AuthGate.tsx`
-- Modify: `src/NameSelect.Client/src/main.tsx`
+- Create: `src/Nomelo.Client/src/auth/AuthGate.tsx`
+- Modify: `src/Nomelo.Client/src/main.tsx`
 
 - [ ] **Step 1: Write AuthGate**
 
-Create `src/NameSelect.Client/src/auth/AuthGate.tsx`:
+Create `src/Nomelo.Client/src/auth/AuthGate.tsx`:
 
 ```tsx
 import { useMe } from "../api/hooks";
@@ -604,7 +604,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
 - [ ] **Step 2: Wire global 401 handler in main.tsx**
 
-Replace `src/NameSelect.Client/src/main.tsx` with:
+Replace `src/Nomelo.Client/src/main.tsx` with:
 
 ```tsx
 import React from "react";
@@ -644,7 +644,7 @@ Expected: succeeds.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/auth src/NameSelect.Client/src/main.tsx
+git add src/Nomelo.Client/src/auth src/Nomelo.Client/src/main.tsx
 git commit -m "feat(client): add AuthGate and global 401 → /login redirect"
 ```
 
@@ -653,13 +653,13 @@ git commit -m "feat(client): add AuthGate and global 401 → /login redirect"
 ## Task 5: Vitest + MSW test setup
 
 **Files:**
-- Create: `src/NameSelect.Client/vitest.config.ts`
-- Create: `src/NameSelect.Client/src/test/setup.ts`
-- Create: `src/NameSelect.Client/src/test/handlers.ts`
+- Create: `src/Nomelo.Client/vitest.config.ts`
+- Create: `src/Nomelo.Client/src/test/setup.ts`
+- Create: `src/Nomelo.Client/src/test/handlers.ts`
 
 - [ ] **Step 1: Write vitest config**
 
-Create `src/NameSelect.Client/vitest.config.ts`:
+Create `src/Nomelo.Client/vitest.config.ts`:
 
 ```ts
 import { defineConfig } from "vitest/config";
@@ -678,7 +678,7 @@ export default defineConfig({
 
 - [ ] **Step 2: Write test setup**
 
-Create `src/NameSelect.Client/src/test/setup.ts`:
+Create `src/Nomelo.Client/src/test/setup.ts`:
 
 ```ts
 import "@testing-library/jest-dom/vitest";
@@ -695,7 +695,7 @@ afterAll(() => server.close());
 
 - [ ] **Step 3: Write default MSW handlers**
 
-Create `src/NameSelect.Client/src/test/handlers.ts`:
+Create `src/Nomelo.Client/src/test/handlers.ts`:
 
 ```ts
 import { http, HttpResponse } from "msw";
@@ -762,7 +762,7 @@ Expected: "No test files found" or similar — config valid.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Client/vitest.config.ts src/NameSelect.Client/src/test
+git add src/Nomelo.Client/vitest.config.ts src/Nomelo.Client/src/test
 git commit -m "test(client): set up Vitest + MSW with default fixture handlers"
 ```
 
@@ -771,12 +771,12 @@ git commit -m "test(client): set up Vitest + MSW with default fixture handlers"
 ## Task 6: NameCard component (TDD)
 
 **Files:**
-- Create: `src/NameSelect.Client/src/components/NameCard.tsx`
-- Test: `src/NameSelect.Client/src/test/components/NameCard.test.tsx`
+- Create: `src/Nomelo.Client/src/components/NameCard.tsx`
+- Test: `src/Nomelo.Client/src/test/components/NameCard.test.tsx`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `src/NameSelect.Client/src/test/components/NameCard.test.tsx`:
+Create `src/Nomelo.Client/src/test/components/NameCard.test.tsx`:
 
 ```tsx
 import { render, screen } from "@testing-library/react";
@@ -826,7 +826,7 @@ Expected: FAIL (component missing).
 
 - [ ] **Step 3: Implement NameCard**
 
-Create `src/NameSelect.Client/src/components/NameCard.tsx`:
+Create `src/Nomelo.Client/src/components/NameCard.tsx`:
 
 ```tsx
 import { useState } from "react";
@@ -884,7 +884,7 @@ Expected: 5 passed.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/components/NameCard.tsx src/NameSelect.Client/src/test/components/NameCard.test.tsx
+git add src/Nomelo.Client/src/components/NameCard.tsx src/Nomelo.Client/src/test/components/NameCard.test.tsx
 git commit -m "feat(client): add NameCard component with prefer/ban actions and description toggle"
 ```
 
@@ -893,13 +893,13 @@ git commit -m "feat(client): add NameCard component with prefer/ban actions and 
 ## Task 7: StabilityBanner & OrientationHint
 
 **Files:**
-- Create: `src/NameSelect.Client/src/components/StabilityBanner.tsx`
-- Create: `src/NameSelect.Client/src/components/OrientationHint.tsx`
-- Test: `src/NameSelect.Client/src/test/components/StabilityBanner.test.tsx`
+- Create: `src/Nomelo.Client/src/components/StabilityBanner.tsx`
+- Create: `src/Nomelo.Client/src/components/OrientationHint.tsx`
+- Test: `src/Nomelo.Client/src/test/components/StabilityBanner.test.tsx`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `src/NameSelect.Client/src/test/components/StabilityBanner.test.tsx`:
+Create `src/Nomelo.Client/src/test/components/StabilityBanner.test.tsx`:
 
 ```tsx
 import { render, screen } from "@testing-library/react";
@@ -926,7 +926,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement StabilityBanner**
 
-Create `src/NameSelect.Client/src/components/StabilityBanner.tsx`:
+Create `src/Nomelo.Client/src/components/StabilityBanner.tsx`:
 
 ```tsx
 interface Props { onDismiss: () => void; }
@@ -943,7 +943,7 @@ export function StabilityBanner({ onDismiss }: Props) {
 
 - [ ] **Step 4: Implement OrientationHint**
 
-Create `src/NameSelect.Client/src/components/OrientationHint.tsx`:
+Create `src/Nomelo.Client/src/components/OrientationHint.tsx`:
 
 ```tsx
 export function OrientationHint() {
@@ -963,7 +963,7 @@ Expected: 2 passed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/components/StabilityBanner.tsx src/NameSelect.Client/src/components/OrientationHint.tsx src/NameSelect.Client/src/test/components/StabilityBanner.test.tsx
+git add src/Nomelo.Client/src/components/StabilityBanner.tsx src/Nomelo.Client/src/components/OrientationHint.tsx src/Nomelo.Client/src/test/components/StabilityBanner.test.tsx
 git commit -m "feat(client): add StabilityBanner and OrientationHint components"
 ```
 
@@ -972,12 +972,12 @@ git commit -m "feat(client): add StabilityBanner and OrientationHint components"
 ## Task 8: RankedTable (TDD)
 
 **Files:**
-- Create: `src/NameSelect.Client/src/components/RankedTable.tsx`
-- Test: `src/NameSelect.Client/src/test/components/RankedTable.test.tsx`
+- Create: `src/Nomelo.Client/src/components/RankedTable.tsx`
+- Test: `src/Nomelo.Client/src/test/components/RankedTable.test.tsx`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `src/NameSelect.Client/src/test/components/RankedTable.test.tsx`:
+Create `src/Nomelo.Client/src/test/components/RankedTable.test.tsx`:
 
 ```tsx
 import { render, screen, within } from "@testing-library/react";
@@ -1013,7 +1013,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement RankedTable**
 
-Create `src/NameSelect.Client/src/components/RankedTable.tsx`:
+Create `src/Nomelo.Client/src/components/RankedTable.tsx`:
 
 ```tsx
 import { useState } from "react";
@@ -1086,7 +1086,7 @@ Expected: 3 passed.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/components/RankedTable.tsx src/NameSelect.Client/src/test/components/RankedTable.test.tsx
+git add src/Nomelo.Client/src/components/RankedTable.tsx src/Nomelo.Client/src/test/components/RankedTable.test.tsx
 git commit -m "feat(client): add RankedTable component with collapsible banned section"
 ```
 
@@ -1095,13 +1095,13 @@ git commit -m "feat(client): add RankedTable component with collapsible banned s
 ## Task 9: HomePage (TDD)
 
 **Files:**
-- Create: `src/NameSelect.Client/src/routes/HomePage.tsx`
-- Create: `src/NameSelect.Client/src/routes/NewSessionDialog.tsx`
-- Test: `src/NameSelect.Client/src/test/components/HomePage.test.tsx`
+- Create: `src/Nomelo.Client/src/routes/HomePage.tsx`
+- Create: `src/Nomelo.Client/src/routes/NewSessionDialog.tsx`
+- Test: `src/Nomelo.Client/src/test/components/HomePage.test.tsx`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `src/NameSelect.Client/src/test/components/HomePage.test.tsx`:
+Create `src/Nomelo.Client/src/test/components/HomePage.test.tsx`:
 
 ```tsx
 import { render, screen, waitFor } from "@testing-library/react";
@@ -1151,7 +1151,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement NewSessionDialog**
 
-Create `src/NameSelect.Client/src/routes/NewSessionDialog.tsx`:
+Create `src/Nomelo.Client/src/routes/NewSessionDialog.tsx`:
 
 ```tsx
 import { useState } from "react";
@@ -1209,7 +1209,7 @@ export function NewSessionDialog({ onClose }: Props) {
 
 - [ ] **Step 4: Implement HomePage**
 
-Create `src/NameSelect.Client/src/routes/HomePage.tsx`:
+Create `src/Nomelo.Client/src/routes/HomePage.tsx`:
 
 ```tsx
 import { useState } from "react";
@@ -1224,7 +1224,7 @@ export function HomePage() {
   return (
     <main className="home">
       <header className="home__header">
-        <h1>NameSelect</h1>
+        <h1>Nomelo</h1>
         <button type="button" onClick={() => setDialogOpen(true)}>Nouvelle session</button>
       </header>
 
@@ -1262,7 +1262,7 @@ Expected: 3 passed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/routes/HomePage.tsx src/NameSelect.Client/src/routes/NewSessionDialog.tsx src/NameSelect.Client/src/test/components/HomePage.test.tsx
+git add src/Nomelo.Client/src/routes/HomePage.tsx src/Nomelo.Client/src/routes/NewSessionDialog.tsx src/Nomelo.Client/src/test/components/HomePage.test.tsx
 git commit -m "feat(client): add HomePage with session list and NewSessionDialog"
 ```
 
@@ -1271,13 +1271,13 @@ git commit -m "feat(client): add HomePage with session list and NewSessionDialog
 ## Task 10: VotingPage (TDD)
 
 **Files:**
-- Create: `src/NameSelect.Client/src/routes/VotingPage.tsx`
-- Create: `src/NameSelect.Client/src/styles/voting.css`
-- Test: `src/NameSelect.Client/src/test/components/VotingPage.test.tsx`
+- Create: `src/Nomelo.Client/src/routes/VotingPage.tsx`
+- Create: `src/Nomelo.Client/src/styles/voting.css`
+- Test: `src/Nomelo.Client/src/test/components/VotingPage.test.tsx`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `src/NameSelect.Client/src/test/components/VotingPage.test.tsx`:
+Create `src/Nomelo.Client/src/test/components/VotingPage.test.tsx`:
 
 ```tsx
 import { render, screen, waitFor } from "@testing-library/react";
@@ -1371,7 +1371,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement voting CSS**
 
-Create `src/NameSelect.Client/src/styles/voting.css`:
+Create `src/Nomelo.Client/src/styles/voting.css`:
 
 ```css
 .voting { display: grid; grid-template-rows: auto 1fr auto; min-height: 100dvh; }
@@ -1389,7 +1389,7 @@ Create `src/NameSelect.Client/src/styles/voting.css`:
 
 - [ ] **Step 4: Implement VotingPage**
 
-Create `src/NameSelect.Client/src/routes/VotingPage.tsx`:
+Create `src/Nomelo.Client/src/routes/VotingPage.tsx`:
 
 ```tsx
 import { useState } from "react";
@@ -1464,7 +1464,7 @@ Expected: 5 passed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/routes/VotingPage.tsx src/NameSelect.Client/src/styles/voting.css src/NameSelect.Client/src/test/components/VotingPage.test.tsx
+git add src/Nomelo.Client/src/routes/VotingPage.tsx src/Nomelo.Client/src/styles/voting.css src/Nomelo.Client/src/test/components/VotingPage.test.tsx
 git commit -m "feat(client): add VotingPage with landscape pair UI and six vote actions"
 ```
 
@@ -1473,12 +1473,12 @@ git commit -m "feat(client): add VotingPage with landscape pair UI and six vote 
 ## Task 11: ResultsPage + SharedResultsPage
 
 **Files:**
-- Create: `src/NameSelect.Client/src/routes/ResultsPage.tsx`
-- Create: `src/NameSelect.Client/src/routes/SharedResultsPage.tsx`
+- Create: `src/Nomelo.Client/src/routes/ResultsPage.tsx`
+- Create: `src/Nomelo.Client/src/routes/SharedResultsPage.tsx`
 
 - [ ] **Step 1: Write ResultsPage**
 
-Create `src/NameSelect.Client/src/routes/ResultsPage.tsx`:
+Create `src/Nomelo.Client/src/routes/ResultsPage.tsx`:
 
 ```tsx
 import { Link, useParams } from "react-router-dom";
@@ -1508,7 +1508,7 @@ export function ResultsPage() {
 
 - [ ] **Step 2: Write SharedResultsPage**
 
-Create `src/NameSelect.Client/src/routes/SharedResultsPage.tsx`:
+Create `src/Nomelo.Client/src/routes/SharedResultsPage.tsx`:
 
 ```tsx
 import { useParams } from "react-router-dom";
@@ -1540,7 +1540,7 @@ Expected: succeeds.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/routes/ResultsPage.tsx src/NameSelect.Client/src/routes/SharedResultsPage.tsx
+git add src/Nomelo.Client/src/routes/ResultsPage.tsx src/Nomelo.Client/src/routes/SharedResultsPage.tsx
 git commit -m "feat(client): add ResultsPage and public SharedResultsPage"
 ```
 
@@ -1549,11 +1549,11 @@ git commit -m "feat(client): add ResultsPage and public SharedResultsPage"
 ## Task 12: App route table
 
 **Files:**
-- Modify: `src/NameSelect.Client/src/App.tsx`
+- Modify: `src/Nomelo.Client/src/App.tsx`
 
 - [ ] **Step 1: Wire all routes**
 
-Replace `src/NameSelect.Client/src/App.tsx`:
+Replace `src/Nomelo.Client/src/App.tsx`:
 
 ```tsx
 import { Route, Routes } from "react-router-dom";
@@ -1600,7 +1600,7 @@ Expected: all tests pass.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/NameSelect.Client/src/App.tsx
+git add src/Nomelo.Client/src/App.tsx
 git commit -m "feat(client): wire route table with public /share/:token outside AuthGate"
 ```
 
@@ -1611,11 +1611,11 @@ git commit -m "feat(client): wire route table with public /share/:token outside 
 The React app uses BrowserRouter, so non-API routes must serve `index.html`. The static files come from `wwwroot`.
 
 **Files:**
-- Modify: `src/NameSelect.Server/Program.cs`
+- Modify: `src/Nomelo.Server/Program.cs`
 
 - [ ] **Step 1: Add static files + fallback**
 
-Open `src/NameSelect.Server/Program.cs`. Replace the section between `app.UseAuthorization();` and `app.Run();` with:
+Open `src/Nomelo.Server/Program.cs`. Replace the section between `app.UseAuthorization();` and `app.Run();` with:
 
 ```csharp
 app.UseAuthentication();
@@ -1648,15 +1648,15 @@ Expected: succeeds.
 In one terminal:
 
 ```bash
-docker run --rm -d --name ns-pg -e POSTGRES_DB=nameselect -e POSTGRES_USER=ns -e POSTGRES_PASSWORD=ns -p 5432:5432 postgres:16
-cd src/NameSelect.Server
+docker run --rm -d --name ns-pg -e POSTGRES_DB=nomelo -e POSTGRES_USER=ns -e POSTGRES_PASSWORD=ns -p 5432:5432 postgres:16
+cd src/Nomelo.Server
 dotnet run
 ```
 
 In another terminal:
 
 ```bash
-cd src/NameSelect.Client
+cd src/Nomelo.Client
 npm run dev
 ```
 
@@ -1673,7 +1673,7 @@ No commit — verification only.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/NameSelect.Server/Program.cs
+git add src/Nomelo.Server/Program.cs
 git commit -m "feat(server): serve SPA from wwwroot with index.html fallback for client routes"
 ```
 
@@ -1699,7 +1699,7 @@ git commit -m "feat(server): serve SPA from wwwroot with index.html fallback for
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-18-nameselect-frontend.md`. Two execution options:
+Plan complete and saved to `docs/superpowers/plans/2026-05-18-nomelo-frontend.md`. Two execution options:
 
 1. **Subagent-Driven (recommended)** — fresh subagent per task, review between tasks, fast iteration.
 2. **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints.

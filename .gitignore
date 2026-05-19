@@ -5,7 +5,7 @@ obj/
 appsettings.*.local.json
 .env
 node_modules/
-src/NameSelect.Server/wwwroot/
+src/Nomelo.Server/wwwroot/
 *.suo
 *.userprefs
 *.swp

@@ -1,4 +1,4 @@
-# NameSelect Deployment Implementation Plan
+# Nomelo Deployment Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **Depends on Plans 1, 2, 3.**
 
@@ -26,7 +26,7 @@ lists/                                       # exists from Plan 1
 README.md                                    # add deployment section
 ```
 
-The image is named `nameselect/app:latest` locally. CI / registry publishing is out of scope.
+The image is named `nomelo/app:latest` locally. CI / registry publishing is out of scope.
 
 ---
 
@@ -56,8 +56,8 @@ Create `.dockerignore` at the repo root:
 .github
 docs
 tests
-src/NameSelect.Server/wwwroot
-src/NameSelect.Server.Tests
+src/Nomelo.Server/wwwroot
+src/Nomelo.Server.Tests
 **/coverage
 **/.DS_Store
 migration-preview.sql
@@ -89,24 +89,24 @@ Create `Dockerfile` at the repo root:
 # 1) React build
 FROM node:20-alpine AS client-build
 WORKDIR /src/client
-COPY src/NameSelect.Client/package.json src/NameSelect.Client/package-lock.json* ./
+COPY src/Nomelo.Client/package.json src/Nomelo.Client/package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm npm ci
-COPY src/NameSelect.Client/ ./
+COPY src/Nomelo.Client/ ./
 RUN npm run build -- --emptyOutDir --outDir /out/wwwroot
 
 # 2) .NET build + publish
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS server-build
 WORKDIR /src
-COPY NameSelect.sln ./
-COPY src/NameSelect.Server/NameSelect.Server.csproj src/NameSelect.Server/
-COPY src/NameSelect.Shared/NameSelect.Shared.csproj src/NameSelect.Shared/
-COPY src/NameSelect.Client/NameSelect.Client.csproj src/NameSelect.Client/
-RUN dotnet restore src/NameSelect.Server/NameSelect.Server.csproj
-COPY src/NameSelect.Server/ src/NameSelect.Server/
-COPY src/NameSelect.Shared/ src/NameSelect.Shared/
+COPY Nomelo.sln ./
+COPY src/Nomelo.Server/Nomelo.Server.csproj src/Nomelo.Server/
+COPY src/Nomelo.Shared/Nomelo.Shared.csproj src/Nomelo.Shared/
+COPY src/Nomelo.Client/Nomelo.Client.csproj src/Nomelo.Client/
+RUN dotnet restore src/Nomelo.Server/Nomelo.Server.csproj
+COPY src/Nomelo.Server/ src/Nomelo.Server/
+COPY src/Nomelo.Shared/ src/Nomelo.Shared/
 # Pull in React build output produced by stage 1
-COPY --from=client-build /out/wwwroot src/NameSelect.Server/wwwroot
-RUN dotnet publish src/NameSelect.Server/NameSelect.Server.csproj \
+COPY --from=client-build /out/wwwroot src/Nomelo.Server/wwwroot
+RUN dotnet publish src/Nomelo.Server/Nomelo.Server.csproj \
     -c Release -o /app/publish --no-restore /p:UseAppHost=false
 
 # 3) Runtime image
@@ -124,11 +124,11 @@ ENV ASPNETCORE_URLS=http://+:8080 \
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
   CMD /usr/local/bin/healthcheck.sh
-ENTRYPOINT ["dotnet", "NameSelect.Server.dll"]
+ENTRYPOINT ["dotnet", "Nomelo.Server.dll"]
 ```
 
 Notes:
-- The `NameSelect.Client.csproj` from Plan 1/3 contains an `AfterTargets="Build"` step that runs `npm run build` — but inside the SDK image we don't have Node. We bypass that csproj entirely by publishing `NameSelect.Server.csproj` directly. The Server project does not reference Client, so the npm step never fires here.
+- The `Nomelo.Client.csproj` from Plan 1/3 contains an `AfterTargets="Build"` step that runs `npm run build` — but inside the SDK image we don't have Node. We bypass that csproj entirely by publishing `Nomelo.Server.csproj` directly. The Server project does not reference Client, so the npm step never fires here.
 - `npm ci` requires `package-lock.json`. Task 3 below verifies that it exists; run `npm install` once locally to generate it before building the image.
 
 - [ ] **Step 2: Write the healthcheck script**
@@ -157,10 +157,10 @@ git commit -m "feat: add multi-stage Dockerfile (Node build + .NET publish + ASP
 - [ ] **Step 1: Ensure lockfile exists**
 
 ```bash
-cd src/NameSelect.Client
+cd src/Nomelo.Client
 npm install
 cd ../..
-git add src/NameSelect.Client/package-lock.json
+git add src/Nomelo.Client/package-lock.json
 git commit -m "chore: add package-lock.json required for reproducible docker build"
 ```
 
@@ -169,7 +169,7 @@ If a lockfile already exists from local dev, skip the commit.
 - [ ] **Step 2: Build the image**
 
 ```bash
-docker build -t nameselect/app:latest .
+docker build -t nomelo/app:latest .
 ```
 
 Expected: image builds successfully. The build pulls Node, .NET SDK, and runtime layers (cached on subsequent builds).
@@ -177,7 +177,7 @@ Expected: image builds successfully. The build pulls Node, .NET SDK, and runtime
 - [ ] **Step 3: Inspect image size**
 
 ```bash
-docker images nameselect/app:latest
+docker images nomelo/app:latest
 ```
 
 Expected: image around 230–280 MB.
@@ -202,7 +202,7 @@ Create `.env.example`:
 DB_PASSWORD=change-me
 
 # OIDC (Authentik)
-OIDC_AUTHORITY=https://auth.example.com/application/o/nameselect/
+OIDC_AUTHORITY=https://auth.example.com/application/o/nomelo/
 OIDC_CLIENT_ID=
 OIDC_CLIENT_SECRET=
 
@@ -217,14 +217,14 @@ Create `docker-compose.yml`:
 ```yaml
 services:
   app:
-    image: nameselect/app:latest
+    image: nomelo/app:latest
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "${APP_PORT:-8080}:8080"
     environment:
-      ConnectionStrings__Default: "Host=db;Database=nameselect;Username=ns;Password=${DB_PASSWORD}"
+      ConnectionStrings__Default: "Host=db;Database=nomelo;Username=ns;Password=${DB_PASSWORD}"
       OIDC__Authority: "${OIDC_AUTHORITY}"
       OIDC__ClientId: "${OIDC_CLIENT_ID}"
       OIDC__ClientSecret: "${OIDC_CLIENT_SECRET}"
@@ -239,13 +239,13 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: nameselect
+      POSTGRES_DB: nomelo
       POSTGRES_USER: ns
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ns -d nameselect"]
+      test: ["CMD-SHELL", "pg_isready -U ns -d nomelo"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -370,7 +370,7 @@ No commit — verification only.
 Create `ops/authentik-setup.md`:
 
 ````markdown
-# Authentik configuration for NameSelect
+# Authentik configuration for Nomelo
 
 These steps assume a running Authentik instance reachable at `https://auth.example.com`.
 
@@ -379,14 +379,14 @@ These steps assume a running Authentik instance reachable at `https://auth.examp
 In the Authentik admin UI:
 
 1. Providers → Create → OAuth2/OpenID Provider.
-2. Name: `NameSelect`.
+2. Name: `Nomelo`.
 3. Authorization flow: `default-provider-authorization-implicit-consent` (or your hardened flow).
 4. Client type: Confidential.
 5. Client ID: auto-generated, copy it.
 6. Client Secret: auto-generated, copy it.
 7. Redirect URIs (one per line):
    ```
-   https://nameselect.example.com/signin-oidc
+   https://nomelo.example.com/signin-oidc
    http://localhost:8080/signin-oidc
    ```
 8. Signing Key: any active key from your instance.
@@ -397,10 +397,10 @@ In the Authentik admin UI:
 ## 2. Create the application
 
 1. Applications → Create.
-2. Name: `NameSelect`.
-3. Slug: `nameselect`.
+2. Name: `Nomelo`.
+3. Slug: `nomelo`.
 4. Provider: the OIDC provider created above.
-5. Launch URL: `https://nameselect.example.com/`.
+5. Launch URL: `https://nomelo.example.com/`.
 6. Save.
 
 ## 3. Note the Authority URL
@@ -408,19 +408,19 @@ In the Authentik admin UI:
 The OIDC discovery document is at:
 
 ```
-https://auth.example.com/application/o/nameselect/.well-known/openid-configuration
+https://auth.example.com/application/o/nomelo/.well-known/openid-configuration
 ```
 
 The `Authority` value for `appsettings`/`.env` is the issuer (the path **without** `.well-known/...`):
 
 ```
-https://auth.example.com/application/o/nameselect/
+https://auth.example.com/application/o/nomelo/
 ```
 
 ## 4. Populate .env
 
 ```
-OIDC_AUTHORITY=https://auth.example.com/application/o/nameselect/
+OIDC_AUTHORITY=https://auth.example.com/application/o/nomelo/
 OIDC_CLIENT_ID=<copied from step 1.5>
 OIDC_CLIENT_SECRET=<copied from step 1.6>
 ```
@@ -431,7 +431,7 @@ OIDC_CLIENT_SECRET=<copied from step 1.6>
 docker compose up -d app
 ```
 
-Open `https://nameselect.example.com/` — it should redirect to Authentik, then back to NameSelect after consent. `/api/me` returns the OIDC `sub` claim.
+Open `https://nomelo.example.com/` — it should redirect to Authentik, then back to Nomelo after consent. `/api/me` returns the OIDC `sub` claim.
 
 ## Troubleshooting
 
@@ -470,7 +470,7 @@ Append to `README.md`:
 ````markdown
 ## Deployment
 
-NameSelect ships as a single Docker image plus PostgreSQL.
+Nomelo ships as a single Docker image plus PostgreSQL.
 
 ### Prerequisites
 - Docker 24+
@@ -489,7 +489,7 @@ Once `app` is healthy, open `http://localhost:8080/`.
 
 ### Name lists
 
-Drop JSON files in `./lists/` matching the format documented in `docs/superpowers/specs/2026-05-17-nameselect-design.md` §4. They are registered at container startup. Restart `app` after adding or modifying files:
+Drop JSON files in `./lists/` matching the format documented in `docs/superpowers/specs/2026-05-17-nomelo-design.md` §4. They are registered at container startup. Restart `app` after adding or modifying files:
 
 ```bash
 docker compose restart app
@@ -502,13 +502,13 @@ See `ops/authentik-setup.md` for the provider + application recipe.
 ### Database backups
 
 ```bash
-docker compose exec db pg_dump -U ns nameselect > backup-$(date +%F).sql
+docker compose exec db pg_dump -U ns nomelo > backup-$(date +%F).sql
 ```
 
 Restore:
 
 ```bash
-cat backup-2026-05-18.sql | docker compose exec -T db psql -U ns nameselect
+cat backup-2026-05-18.sql | docker compose exec -T db psql -U ns nomelo
 ```
 
 ### Upgrades
@@ -590,13 +590,13 @@ No commit — verification only.
 - Healthcheck endpoint `/healthz` exists from Plan 1.
 - Port 8080 is set via `ASPNETCORE_URLS` in the Dockerfile and exposed identically in compose.
 
-**Operational note:** the `NameSelect.Client.csproj` from Plan 1 has an `AfterTargets="Build"` Node step. That target runs only when the Client project is built directly (e.g., `dotnet build NameSelect.sln`). The Dockerfile bypasses it by publishing only the Server project, so the runtime image build does not require Node inside the .NET SDK stage. If a developer runs a full solution build outside Docker, Node must be installed locally — call this out in a follow-up CONTRIBUTING note if friction emerges.
+**Operational note:** the `Nomelo.Client.csproj` from Plan 1 has an `AfterTargets="Build"` Node step. That target runs only when the Client project is built directly (e.g., `dotnet build Nomelo.sln`). The Dockerfile bypasses it by publishing only the Server project, so the runtime image build does not require Node inside the .NET SDK stage. If a developer runs a full solution build outside Docker, Node must be installed locally — call this out in a follow-up CONTRIBUTING note if friction emerges.
 
 ---
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-18-nameselect-deployment.md`. Two execution options:
+Plan complete and saved to `docs/superpowers/plans/2026-05-18-nomelo-deployment.md`. Two execution options:
 
 1. **Subagent-Driven (recommended)** — fresh subagent per task, review between tasks, fast iteration.
 2. **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints.

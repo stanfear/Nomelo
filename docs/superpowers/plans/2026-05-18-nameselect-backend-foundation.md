@@ -1,8 +1,8 @@
-# NameSelect Backend Foundation Implementation Plan
+# Nomelo Backend Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Bootstrap the NameSelect solution with ASP.NET Core, PostgreSQL via EF Core, JSON list loader, OIDC authentication against Authentik, and the foundational `/api/lists` and `/api/sessions` endpoints.
+**Goal:** Bootstrap the Nomelo solution with ASP.NET Core, PostgreSQL via EF Core, JSON list loader, OIDC authentication against Authentik, and the foundational `/api/lists` and `/api/sessions` endpoints.
 
 **Architecture:** Single .NET 8 solution with three projects (`Server`, `Client`, `Shared`). The server hosts Minimal APIs, EF Core (Npgsql provider), cookie + OIDC auth. A hosted service scans `/data/lists/` at startup, validates each JSON file, and upserts metadata rows into the `lists` table. Sessions are scoped per OIDC `sub` claim. No ELO logic in this plan: only CRUD on lists and sessions.
 
@@ -13,10 +13,10 @@
 ## File Structure
 
 ```
-NameSelect.sln
+Nomelo.sln
 src/
-├── NameSelect.Server/
-│   ├── NameSelect.Server.csproj
+├── Nomelo.Server/
+│   ├── Nomelo.Server.csproj
 │   ├── Program.cs                              # Composition root
 │   ├── appsettings.json
 │   ├── appsettings.Development.json
@@ -38,18 +38,18 @@ src/
 │   │   ├── ListsEndpoints.cs                   # /api/lists
 │   │   └── SessionsEndpoints.cs                # /api/sessions
 │   └── Migrations/                             # EF Core generated
-├── NameSelect.Shared/
-│   ├── NameSelect.Shared.csproj
+├── Nomelo.Shared/
+│   ├── Nomelo.Shared.csproj
 │   └── Dtos/
 │       ├── ListDto.cs
 │       ├── SessionDto.cs
 │       └── CreateSessionRequest.cs
-└── NameSelect.Client/                          # placeholder, filled in Plan 3
-    └── NameSelect.Client.csproj                # empty Class Library stub
+└── Nomelo.Client/                          # placeholder, filled in Plan 3
+    └── Nomelo.Client.csproj                # empty Class Library stub
 
 tests/
-└── NameSelect.Server.Tests/
-    ├── NameSelect.Server.Tests.csproj
+└── Nomelo.Server.Tests/
+    ├── Nomelo.Server.Tests.csproj
     ├── Lists/
     │   ├── ListFileLoaderTests.cs              # unit tests
     │   └── ListDirectoryScannerTests.cs        # unit tests
@@ -75,35 +75,35 @@ lists/                                          # sample JSON lists (volume)
 ## Task 1: Solution & project scaffolding
 
 **Files:**
-- Create: `NameSelect.sln`
-- Create: `src/NameSelect.Server/NameSelect.Server.csproj`
-- Create: `src/NameSelect.Server/Program.cs`
-- Create: `src/NameSelect.Server/appsettings.json`
-- Create: `src/NameSelect.Server/appsettings.Development.json`
-- Create: `src/NameSelect.Shared/NameSelect.Shared.csproj`
-- Create: `src/NameSelect.Client/NameSelect.Client.csproj`
-- Create: `tests/NameSelect.Server.Tests/NameSelect.Server.Tests.csproj`
+- Create: `Nomelo.sln`
+- Create: `src/Nomelo.Server/Nomelo.Server.csproj`
+- Create: `src/Nomelo.Server/Program.cs`
+- Create: `src/Nomelo.Server/appsettings.json`
+- Create: `src/Nomelo.Server/appsettings.Development.json`
+- Create: `src/Nomelo.Shared/Nomelo.Shared.csproj`
+- Create: `src/Nomelo.Client/Nomelo.Client.csproj`
+- Create: `tests/Nomelo.Server.Tests/Nomelo.Server.Tests.csproj`
 - Create: `.gitignore`
 
 - [ ] **Step 1: Create solution and folders**
 
 ```bash
-cd "C:\Users\TristanROCHE\Documents\Projet Perso\NameSelect"
-dotnet new sln -n NameSelect
+cd "C:\Users\TristanROCHE\Documents\Projet Perso\Nomelo"
+dotnet new sln -n Nomelo
 mkdir src tests
-dotnet new web -n NameSelect.Server -o src/NameSelect.Server --framework net8.0
-dotnet new classlib -n NameSelect.Shared -o src/NameSelect.Shared --framework net8.0
-dotnet new classlib -n NameSelect.Client -o src/NameSelect.Client --framework net8.0
-dotnet new xunit -n NameSelect.Server.Tests -o tests/NameSelect.Server.Tests --framework net8.0
-dotnet sln add src/NameSelect.Server src/NameSelect.Shared src/NameSelect.Client tests/NameSelect.Server.Tests
-dotnet add src/NameSelect.Server reference src/NameSelect.Shared
-dotnet add tests/NameSelect.Server.Tests reference src/NameSelect.Server
+dotnet new web -n Nomelo.Server -o src/Nomelo.Server --framework net8.0
+dotnet new classlib -n Nomelo.Shared -o src/Nomelo.Shared --framework net8.0
+dotnet new classlib -n Nomelo.Client -o src/Nomelo.Client --framework net8.0
+dotnet new xunit -n Nomelo.Server.Tests -o tests/Nomelo.Server.Tests --framework net8.0
+dotnet sln add src/Nomelo.Server src/Nomelo.Shared src/Nomelo.Client tests/Nomelo.Server.Tests
+dotnet add src/Nomelo.Server reference src/Nomelo.Shared
+dotnet add tests/Nomelo.Server.Tests reference src/Nomelo.Server
 ```
 
 - [ ] **Step 2: Add server NuGet packages**
 
 ```bash
-cd src/NameSelect.Server
+cd src/Nomelo.Server
 dotnet add package Microsoft.EntityFrameworkCore --version 8.0.10
 dotnet add package Microsoft.EntityFrameworkCore.Design --version 8.0.10
 dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL --version 8.0.10
@@ -115,7 +115,7 @@ cd ../..
 - [ ] **Step 3: Add test NuGet packages**
 
 ```bash
-cd tests/NameSelect.Server.Tests
+cd tests/Nomelo.Server.Tests
 dotnet add package FluentAssertions --version 6.12.1
 dotnet add package Microsoft.AspNetCore.Mvc.Testing --version 8.0.10
 dotnet add package Testcontainers.PostgreSql --version 3.10.0
@@ -124,7 +124,7 @@ cd ../..
 
 - [ ] **Step 4: Write minimal Program.cs**
 
-Replace `src/NameSelect.Server/Program.cs` with:
+Replace `src/Nomelo.Server/Program.cs` with:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -140,7 +140,7 @@ public partial class Program;
 
 - [ ] **Step 5: Write appsettings.json**
 
-Replace `src/NameSelect.Server/appsettings.json` with:
+Replace `src/Nomelo.Server/appsettings.json` with:
 
 ```json
 {
@@ -152,7 +152,7 @@ Replace `src/NameSelect.Server/appsettings.json` with:
   },
   "AllowedHosts": "*",
   "ConnectionStrings": {
-    "Default": "Host=localhost;Database=nameselect;Username=ns;Password=ns"
+    "Default": "Host=localhost;Database=nomelo;Username=ns;Password=ns"
   },
   "Lists": {
     "Directory": "/data/lists"
@@ -187,7 +187,7 @@ obj/
 appsettings.*.local.json
 .env
 node_modules/
-src/NameSelect.Server/wwwroot/
+src/Nomelo.Server/wwwroot/
 ```
 
 - [ ] **Step 7: Verify build**
@@ -198,7 +198,7 @@ Expected: Build succeeded, 0 errors.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add NameSelect.sln src tests .gitignore
+git add Nomelo.sln src tests .gitignore
 git commit -m "chore: scaffold solution with server, shared, client, tests projects"
 ```
 
@@ -207,18 +207,18 @@ git commit -m "chore: scaffold solution with server, shared, client, tests proje
 ## Task 2: Entities & DbContext
 
 **Files:**
-- Create: `src/NameSelect.Server/Data/Entities/NameList.cs`
-- Create: `src/NameSelect.Server/Data/Entities/VotingSession.cs`
-- Create: `src/NameSelect.Server/Data/Entities/Vote.cs`
-- Create: `src/NameSelect.Server/Data/Entities/ItemState.cs`
-- Create: `src/NameSelect.Server/Data/AppDbContext.cs`
+- Create: `src/Nomelo.Server/Data/Entities/NameList.cs`
+- Create: `src/Nomelo.Server/Data/Entities/VotingSession.cs`
+- Create: `src/Nomelo.Server/Data/Entities/Vote.cs`
+- Create: `src/Nomelo.Server/Data/Entities/ItemState.cs`
+- Create: `src/Nomelo.Server/Data/AppDbContext.cs`
 
 - [ ] **Step 1: Write NameList entity**
 
-Create `src/NameSelect.Server/Data/Entities/NameList.cs`:
+Create `src/Nomelo.Server/Data/Entities/NameList.cs`:
 
 ```csharp
-namespace NameSelect.Server.Data.Entities;
+namespace Nomelo.Server.Data.Entities;
 
 public class NameList
 {
@@ -232,10 +232,10 @@ public class NameList
 
 - [ ] **Step 2: Write VotingSession entity**
 
-Create `src/NameSelect.Server/Data/Entities/VotingSession.cs`:
+Create `src/Nomelo.Server/Data/Entities/VotingSession.cs`:
 
 ```csharp
-namespace NameSelect.Server.Data.Entities;
+namespace Nomelo.Server.Data.Entities;
 
 public class VotingSession
 {
@@ -251,10 +251,10 @@ public class VotingSession
 
 - [ ] **Step 3: Write Vote entity**
 
-Create `src/NameSelect.Server/Data/Entities/Vote.cs`:
+Create `src/Nomelo.Server/Data/Entities/Vote.cs`:
 
 ```csharp
-namespace NameSelect.Server.Data.Entities;
+namespace Nomelo.Server.Data.Entities;
 
 public enum VoteResult
 {
@@ -279,10 +279,10 @@ public class Vote
 
 - [ ] **Step 4: Write ItemState entity**
 
-Create `src/NameSelect.Server/Data/Entities/ItemState.cs`:
+Create `src/Nomelo.Server/Data/Entities/ItemState.cs`:
 
 ```csharp
-namespace NameSelect.Server.Data.Entities;
+namespace Nomelo.Server.Data.Entities;
 
 public class ItemState
 {
@@ -296,13 +296,13 @@ public class ItemState
 
 - [ ] **Step 5: Write AppDbContext**
 
-Create `src/NameSelect.Server/Data/AppDbContext.cs`:
+Create `src/Nomelo.Server/Data/AppDbContext.cs`:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data.Entities;
+using Nomelo.Server.Data.Entities;
 
-namespace NameSelect.Server.Data;
+namespace Nomelo.Server.Data;
 
 public class AppDbContext : DbContext
 {
@@ -375,11 +375,11 @@ public class AppDbContext : DbContext
 
 - [ ] **Step 6: Register DbContext in Program.cs**
 
-Replace `src/NameSelect.Server/Program.cs` with:
+Replace `src/Nomelo.Server/Program.cs` with:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
+using Nomelo.Server.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -403,8 +403,8 @@ Expected: Build succeeded, 0 errors.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/NameSelect.Server/Data
-git add src/NameSelect.Server/Program.cs
+git add src/Nomelo.Server/Data
+git add src/Nomelo.Server/Program.cs
 git commit -m "feat: add EF Core entities and AppDbContext for lists, sessions, votes, item states"
 ```
 
@@ -413,7 +413,7 @@ git commit -m "feat: add EF Core entities and AppDbContext for lists, sessions, 
 ## Task 3: Initial EF Core migration
 
 **Files:**
-- Create: `src/NameSelect.Server/Migrations/*` (generated)
+- Create: `src/Nomelo.Server/Migrations/*` (generated)
 
 - [ ] **Step 1: Install dotnet-ef if missing**
 
@@ -424,19 +424,19 @@ Expected: Tool already installed or installed successfully.
 
 ```bash
 dotnet ef migrations add InitialCreate `
-  --project src/NameSelect.Server `
-  --startup-project src/NameSelect.Server `
+  --project src/Nomelo.Server `
+  --startup-project src/Nomelo.Server `
   --output-dir Migrations
 ```
 
-Expected: Migration files appear under `src/NameSelect.Server/Migrations/`.
+Expected: Migration files appear under `src/Nomelo.Server/Migrations/`.
 
 - [ ] **Step 3: Inspect generated SQL**
 
 ```bash
 dotnet ef migrations script `
-  --project src/NameSelect.Server `
-  --startup-project src/NameSelect.Server `
+  --project src/Nomelo.Server `
+  --startup-project src/Nomelo.Server `
   --output migration-preview.sql
 ```
 
@@ -468,7 +468,7 @@ Expected: Build succeeded.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Server/Migrations src/NameSelect.Server/Program.cs
+git add src/Nomelo.Server/Migrations src/Nomelo.Server/Program.cs
 git commit -m "feat: add initial EF Core migration and auto-migrate on startup"
 ```
 
@@ -479,19 +479,19 @@ git commit -m "feat: add initial EF Core migration and auto-migrate on startup"
 Parses one JSON file into an in-memory `ListFile`, with validation: required fields, unique `value` within `items`.
 
 **Files:**
-- Create: `src/NameSelect.Server/Lists/ListFile.cs`
-- Create: `src/NameSelect.Server/Lists/ListFileLoader.cs`
-- Test: `tests/NameSelect.Server.Tests/Lists/ListFileLoaderTests.cs`
+- Create: `src/Nomelo.Server/Lists/ListFile.cs`
+- Create: `src/Nomelo.Server/Lists/ListFileLoader.cs`
+- Test: `tests/Nomelo.Server.Tests/Lists/ListFileLoaderTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Lists/ListFileLoaderTests.cs`:
+Create `tests/Nomelo.Server.Tests/Lists/ListFileLoaderTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Lists;
+using Nomelo.Server.Lists;
 
-namespace NameSelect.Server.Tests.Lists;
+namespace Nomelo.Server.Tests.Lists;
 
 public class ListFileLoaderTests
 {
@@ -588,10 +588,10 @@ Expected: FAIL with compilation errors (types don't exist yet).
 
 - [ ] **Step 3: Implement ListFile**
 
-Create `src/NameSelect.Server/Lists/ListFile.cs`:
+Create `src/Nomelo.Server/Lists/ListFile.cs`:
 
 ```csharp
-namespace NameSelect.Server.Lists;
+namespace Nomelo.Server.Lists;
 
 public record ListFileItem(string Value, IReadOnlyList<string> Variants, string? Description);
 
@@ -605,12 +605,12 @@ public class ListFileException : Exception
 
 - [ ] **Step 4: Implement ListFileLoader**
 
-Create `src/NameSelect.Server/Lists/ListFileLoader.cs`:
+Create `src/Nomelo.Server/Lists/ListFileLoader.cs`:
 
 ```csharp
 using System.Text.Json;
 
-namespace NameSelect.Server.Lists;
+namespace Nomelo.Server.Lists;
 
 public class ListFileLoader
 {
@@ -670,7 +670,7 @@ Expected: 5 passed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Server/Lists tests/NameSelect.Server.Tests/Lists
+git add src/Nomelo.Server/Lists tests/Nomelo.Server.Tests/Lists
 git commit -m "feat: add ListFileLoader with JSON parsing and validation"
 ```
 
@@ -681,19 +681,19 @@ git commit -m "feat: add ListFileLoader with JSON parsing and validation"
 The scanner enumerates JSON files; the hosted service runs it at startup and upserts metadata into the `lists` table. A file whose `id` already exists is updated; old `lists` rows whose file no longer exists are removed.
 
 **Files:**
-- Create: `src/NameSelect.Server/Lists/ListDirectoryScanner.cs`
-- Create: `src/NameSelect.Server/Lists/ListRegistrarHostedService.cs`
-- Test: `tests/NameSelect.Server.Tests/Lists/ListDirectoryScannerTests.cs`
+- Create: `src/Nomelo.Server/Lists/ListDirectoryScanner.cs`
+- Create: `src/Nomelo.Server/Lists/ListRegistrarHostedService.cs`
+- Test: `tests/Nomelo.Server.Tests/Lists/ListDirectoryScannerTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Lists/ListDirectoryScannerTests.cs`:
+Create `tests/Nomelo.Server.Tests/Lists/ListDirectoryScannerTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using NameSelect.Server.Lists;
+using Nomelo.Server.Lists;
 
-namespace NameSelect.Server.Tests.Lists;
+namespace Nomelo.Server.Tests.Lists;
 
 public class ListDirectoryScannerTests : IDisposable
 {
@@ -769,10 +769,10 @@ Expected: FAIL (compilation errors).
 
 - [ ] **Step 3: Implement ListDirectoryScanner**
 
-Create `src/NameSelect.Server/Lists/ListDirectoryScanner.cs`:
+Create `src/Nomelo.Server/Lists/ListDirectoryScanner.cs`:
 
 ```csharp
-namespace NameSelect.Server.Lists;
+namespace Nomelo.Server.Lists;
 
 public record ScanResult(string Path, ListFile? List, string? Error);
 
@@ -805,14 +805,14 @@ Expected: 4 passed.
 
 - [ ] **Step 5: Implement ListRegistrarHostedService**
 
-Create `src/NameSelect.Server/Lists/ListRegistrarHostedService.cs`:
+Create `src/Nomelo.Server/Lists/ListRegistrarHostedService.cs`:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
-using NameSelect.Server.Data.Entities;
+using Nomelo.Server.Data;
+using Nomelo.Server.Data.Entities;
 
-namespace NameSelect.Server.Lists;
+namespace Nomelo.Server.Lists;
 
 public class ListRegistrarHostedService : IHostedService
 {
@@ -901,7 +901,7 @@ builder.Services.AddHostedService<ListRegistrarHostedService>();
 Required `using` directives at the top of `Program.cs`:
 
 ```csharp
-using NameSelect.Server.Lists;
+using Nomelo.Server.Lists;
 ```
 
 - [ ] **Step 7: Add a sample list file**
@@ -928,7 +928,7 @@ Expected: Build succeeded.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/NameSelect.Server/Lists tests/NameSelect.Server.Tests/Lists src/NameSelect.Server/Program.cs lists
+git add src/Nomelo.Server/Lists tests/Nomelo.Server.Tests/Lists src/Nomelo.Server/Program.cs lists
 git commit -m "feat: scan lists directory at startup and upsert metadata into lists table"
 ```
 
@@ -939,26 +939,26 @@ git commit -m "feat: scan lists directory at startup and upsert metadata into li
 OIDC against Authentik. The OIDC handler runs only when the user hits the login endpoints; API calls authenticate via the cookie set after callback. In tests, both schemes are replaced by a `TestAuthHandler` so endpoint tests don't need a real Authentik.
 
 **Files:**
-- Create: `src/NameSelect.Server/Auth/AuthExtensions.cs`
-- Modify: `src/NameSelect.Server/Program.cs`
+- Create: `src/Nomelo.Server/Auth/AuthExtensions.cs`
+- Modify: `src/Nomelo.Server/Program.cs`
 
 - [ ] **Step 1: Write AuthExtensions**
 
-Create `src/NameSelect.Server/Auth/AuthExtensions.cs`:
+Create `src/Nomelo.Server/Auth/AuthExtensions.cs`:
 
 ```csharp
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
-namespace NameSelect.Server.Auth;
+namespace Nomelo.Server.Auth;
 
 public static class AuthExtensions
 {
     public const string CookieScheme = "ns-cookie";
     public const string OidcScheme = "ns-oidc";
 
-    public static IServiceCollection AddNameSelectAuth(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddNomeloAuth(this IServiceCollection services, IConfiguration config)
     {
         services
             .AddAuthentication(opt =>
@@ -968,7 +968,7 @@ public static class AuthExtensions
             })
             .AddCookie(CookieScheme, opt =>
             {
-                opt.Cookie.Name = "ns_auth";
+                opt.Cookie.Name = "nm_auth";
                 opt.Cookie.HttpOnly = true;
                 opt.Cookie.SameSite = SameSiteMode.Strict;
                 opt.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
@@ -1038,9 +1038,9 @@ Replace `Program.cs` contents with:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Auth;
-using NameSelect.Server.Data;
-using NameSelect.Server.Lists;
+using Nomelo.Server.Auth;
+using Nomelo.Server.Data;
+using Nomelo.Server.Lists;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -1051,7 +1051,7 @@ builder.Services.AddSingleton<ListFileLoader>();
 builder.Services.AddScoped<ListDirectoryScanner>();
 builder.Services.AddHostedService<ListRegistrarHostedService>();
 
-builder.Services.AddNameSelectAuth(builder.Configuration);
+builder.Services.AddNomeloAuth(builder.Configuration);
 
 var app = builder.Build();
 
@@ -1080,7 +1080,7 @@ Expected: Build succeeded.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/NameSelect.Server/Auth src/NameSelect.Server/Program.cs
+git add src/Nomelo.Server/Auth src/Nomelo.Server/Program.cs
 git commit -m "feat: add OIDC (Authentik) + cookie auth with /login, /logout, /api/me"
 ```
 
@@ -1089,32 +1089,32 @@ git commit -m "feat: add OIDC (Authentik) + cookie auth with /login, /logout, /a
 ## Task 7: DTOs in Shared project
 
 **Files:**
-- Create: `src/NameSelect.Shared/Dtos/ListDto.cs`
-- Create: `src/NameSelect.Shared/Dtos/SessionDto.cs`
-- Create: `src/NameSelect.Shared/Dtos/CreateSessionRequest.cs`
+- Create: `src/Nomelo.Shared/Dtos/ListDto.cs`
+- Create: `src/Nomelo.Shared/Dtos/SessionDto.cs`
+- Create: `src/Nomelo.Shared/Dtos/CreateSessionRequest.cs`
 
 - [ ] **Step 1: Delete default Class1.cs from Shared**
 
 ```bash
-rm src/NameSelect.Shared/Class1.cs
+rm src/Nomelo.Shared/Class1.cs
 ```
 
 - [ ] **Step 2: Write ListDto**
 
-Create `src/NameSelect.Shared/Dtos/ListDto.cs`:
+Create `src/Nomelo.Shared/Dtos/ListDto.cs`:
 
 ```csharp
-namespace NameSelect.Shared.Dtos;
+namespace Nomelo.Shared.Dtos;
 
 public record ListDto(string Id, string Name, int ItemCount);
 ```
 
 - [ ] **Step 3: Write SessionDto**
 
-Create `src/NameSelect.Shared/Dtos/SessionDto.cs`:
+Create `src/Nomelo.Shared/Dtos/SessionDto.cs`:
 
 ```csharp
-namespace NameSelect.Shared.Dtos;
+namespace Nomelo.Shared.Dtos;
 
 public record SessionDto(
     Guid Id,
@@ -1129,10 +1129,10 @@ public record SessionDto(
 
 - [ ] **Step 4: Write CreateSessionRequest**
 
-Create `src/NameSelect.Shared/Dtos/CreateSessionRequest.cs`:
+Create `src/Nomelo.Shared/Dtos/CreateSessionRequest.cs`:
 
 ```csharp
-namespace NameSelect.Shared.Dtos;
+namespace Nomelo.Shared.Dtos;
 
 public record CreateSessionRequest(string ListId, int ConfidenceThreshold);
 ```
@@ -1145,7 +1145,7 @@ Expected: Build succeeded.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Shared
+git add src/Nomelo.Shared
 git commit -m "feat: add ListDto, SessionDto, CreateSessionRequest in Shared"
 ```
 
@@ -1154,25 +1154,25 @@ git commit -m "feat: add ListDto, SessionDto, CreateSessionRequest in Shared"
 ## Task 8: Test infrastructure (Postgres fixture + fake auth)
 
 **Files:**
-- Create: `tests/NameSelect.Server.Tests/Infrastructure/PostgresFixture.cs`
-- Create: `tests/NameSelect.Server.Tests/Infrastructure/TestAuthHandler.cs`
-- Create: `tests/NameSelect.Server.Tests/Infrastructure/NameSelectAppFactory.cs`
+- Create: `tests/Nomelo.Server.Tests/Infrastructure/PostgresFixture.cs`
+- Create: `tests/Nomelo.Server.Tests/Infrastructure/TestAuthHandler.cs`
+- Create: `tests/Nomelo.Server.Tests/Infrastructure/NomeloAppFactory.cs`
 
 - [ ] **Step 1: Write PostgresFixture**
 
-Create `tests/NameSelect.Server.Tests/Infrastructure/PostgresFixture.cs`:
+Create `tests/Nomelo.Server.Tests/Infrastructure/PostgresFixture.cs`:
 
 ```csharp
 using Testcontainers.PostgreSql;
 using Xunit;
 
-namespace NameSelect.Server.Tests.Infrastructure;
+namespace Nomelo.Server.Tests.Infrastructure;
 
 public class PostgresFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
         .WithImage("postgres:16")
-        .WithDatabase("nameselect")
+        .WithDatabase("nomelo")
         .WithUsername("ns")
         .WithPassword("ns")
         .Build();
@@ -1189,7 +1189,7 @@ public class PostgresCollection : ICollectionFixture<PostgresFixture> { }
 
 - [ ] **Step 2: Write TestAuthHandler**
 
-Create `tests/NameSelect.Server.Tests/Infrastructure/TestAuthHandler.cs`:
+Create `tests/Nomelo.Server.Tests/Infrastructure/TestAuthHandler.cs`:
 
 ```csharp
 using System.Security.Claims;
@@ -1198,7 +1198,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace NameSelect.Server.Tests.Infrastructure;
+namespace Nomelo.Server.Tests.Infrastructure;
 
 public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
@@ -1229,9 +1229,9 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 }
 ```
 
-- [ ] **Step 3: Write NameSelectAppFactory**
+- [ ] **Step 3: Write NomeloAppFactory**
 
-Create `tests/NameSelect.Server.Tests/Infrastructure/NameSelectAppFactory.cs`:
+Create `tests/Nomelo.Server.Tests/Infrastructure/NomeloAppFactory.cs`:
 
 ```csharp
 using Microsoft.AspNetCore.Authentication;
@@ -1239,12 +1239,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NameSelect.Server.Data;
-using NameSelect.Server.Auth;
+using Nomelo.Server.Data;
+using Nomelo.Server.Auth;
 
-namespace NameSelect.Server.Tests.Infrastructure;
+namespace Nomelo.Server.Tests.Infrastructure;
 
-public class NameSelectAppFactory : WebApplicationFactory<Program>
+public class NomeloAppFactory : WebApplicationFactory<Program>
 {
     public string ConnectionString { get; init; } = "";
     public string ListsDirectory { get; init; } = "";
@@ -1283,7 +1283,7 @@ Expected: Build succeeded.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/NameSelect.Server.Tests/Infrastructure
+git add tests/Nomelo.Server.Tests/Infrastructure
 git commit -m "test: add Postgres testcontainer fixture, test auth handler, app factory"
 ```
 
@@ -1292,29 +1292,29 @@ git commit -m "test: add Postgres testcontainer fixture, test auth handler, app 
 ## Task 9: /api/lists endpoint (TDD)
 
 **Files:**
-- Create: `src/NameSelect.Server/Endpoints/ListsEndpoints.cs`
-- Modify: `src/NameSelect.Server/Program.cs`
-- Test: `tests/NameSelect.Server.Tests/Endpoints/ListsEndpointsTests.cs`
+- Create: `src/Nomelo.Server/Endpoints/ListsEndpoints.cs`
+- Modify: `src/Nomelo.Server/Program.cs`
+- Test: `tests/Nomelo.Server.Tests/Endpoints/ListsEndpointsTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Endpoints/ListsEndpointsTests.cs`:
+Create `tests/Nomelo.Server.Tests/Endpoints/ListsEndpointsTests.cs`:
 
 ```csharp
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using NameSelect.Server.Tests.Infrastructure;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Tests.Infrastructure;
+using Nomelo.Shared.Dtos;
 using Xunit;
 
-namespace NameSelect.Server.Tests.Endpoints;
+namespace Nomelo.Server.Tests.Endpoints;
 
 [Collection("postgres")]
 public class ListsEndpointsTests : IAsyncLifetime
 {
     private readonly PostgresFixture _pg;
-    private NameSelectAppFactory _factory = default!;
+    private NomeloAppFactory _factory = default!;
     private string _listsDir = "";
 
     public ListsEndpointsTests(PostgresFixture pg) => _pg = pg;
@@ -1326,7 +1326,7 @@ public class ListsEndpointsTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(_listsDir, "a.json"),
             """{ "id": "a", "name": "List A", "items": [{ "value": "x" }, { "value": "y" }] }""");
 
-        _factory = new NameSelectAppFactory
+        _factory = new NomeloAppFactory
         {
             ConnectionString = _pg.ConnectionString,
             ListsDirectory = _listsDir
@@ -1362,14 +1362,14 @@ Expected: FAIL (404 — endpoint not mapped yet).
 
 - [ ] **Step 3: Implement ListsEndpoints**
 
-Create `src/NameSelect.Server/Endpoints/ListsEndpoints.cs`:
+Create `src/Nomelo.Server/Endpoints/ListsEndpoints.cs`:
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Data;
+using Nomelo.Shared.Dtos;
 
-namespace NameSelect.Server.Endpoints;
+namespace Nomelo.Server.Endpoints;
 
 public static class ListsEndpoints
 {
@@ -1391,7 +1391,7 @@ public static class ListsEndpoints
 
 - [ ] **Step 4: Wire endpoint in Program.cs**
 
-Add `using NameSelect.Server.Endpoints;` and add this line after `app.MapAuthEndpoints();`:
+Add `using Nomelo.Server.Endpoints;` and add this line after `app.MapAuthEndpoints();`:
 
 ```csharp
 app.MapListsEndpoints();
@@ -1405,7 +1405,7 @@ Expected: 1 passed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/NameSelect.Server/Endpoints src/NameSelect.Server/Program.cs tests/NameSelect.Server.Tests/Endpoints
+git add src/Nomelo.Server/Endpoints src/Nomelo.Server/Program.cs tests/Nomelo.Server.Tests/Endpoints
 git commit -m "feat: add GET /api/lists endpoint with integration test"
 ```
 
@@ -1416,29 +1416,29 @@ git commit -m "feat: add GET /api/lists endpoint with integration test"
 Three endpoints: list user's sessions, create a session (returns 201 with share token), get session details. Authorization scopes results to the current user.
 
 **Files:**
-- Create: `src/NameSelect.Server/Endpoints/SessionsEndpoints.cs`
-- Modify: `src/NameSelect.Server/Program.cs`
-- Test: `tests/NameSelect.Server.Tests/Endpoints/SessionsEndpointsTests.cs`
+- Create: `src/Nomelo.Server/Endpoints/SessionsEndpoints.cs`
+- Modify: `src/Nomelo.Server/Program.cs`
+- Test: `tests/Nomelo.Server.Tests/Endpoints/SessionsEndpointsTests.cs`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/NameSelect.Server.Tests/Endpoints/SessionsEndpointsTests.cs`:
+Create `tests/Nomelo.Server.Tests/Endpoints/SessionsEndpointsTests.cs`:
 
 ```csharp
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using NameSelect.Server.Tests.Infrastructure;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Tests.Infrastructure;
+using Nomelo.Shared.Dtos;
 using Xunit;
 
-namespace NameSelect.Server.Tests.Endpoints;
+namespace Nomelo.Server.Tests.Endpoints;
 
 [Collection("postgres")]
 public class SessionsEndpointsTests : IAsyncLifetime
 {
     private readonly PostgresFixture _pg;
-    private NameSelectAppFactory _factory = default!;
+    private NomeloAppFactory _factory = default!;
     private string _listsDir = "";
 
     public SessionsEndpointsTests(PostgresFixture pg) => _pg = pg;
@@ -1450,7 +1450,7 @@ public class SessionsEndpointsTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(_listsDir, "a.json"),
             """{ "id": "a", "name": "List A", "items": [{ "value": "x" }, { "value": "y" }] }""");
 
-        _factory = new NameSelectAppFactory
+        _factory = new NomeloAppFactory
         {
             ConnectionString = _pg.ConnectionString,
             ListsDirectory = _listsDir
@@ -1544,16 +1544,16 @@ Expected: FAIL (404s — endpoints not mapped yet).
 
 - [ ] **Step 3: Implement SessionsEndpoints**
 
-Create `src/NameSelect.Server/Endpoints/SessionsEndpoints.cs`:
+Create `src/Nomelo.Server/Endpoints/SessionsEndpoints.cs`:
 
 ```csharp
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using NameSelect.Server.Data;
-using NameSelect.Server.Data.Entities;
-using NameSelect.Shared.Dtos;
+using Nomelo.Server.Data;
+using Nomelo.Server.Data.Entities;
+using Nomelo.Shared.Dtos;
 
-namespace NameSelect.Server.Endpoints;
+namespace Nomelo.Server.Endpoints;
 
 public static class SessionsEndpoints
 {
@@ -1671,7 +1671,7 @@ Expected: All tests pass.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/NameSelect.Server/Endpoints/SessionsEndpoints.cs src/NameSelect.Server/Program.cs tests/NameSelect.Server.Tests/Endpoints/SessionsEndpointsTests.cs
+git add src/Nomelo.Server/Endpoints/SessionsEndpoints.cs src/Nomelo.Server/Program.cs tests/Nomelo.Server.Tests/Endpoints/SessionsEndpointsTests.cs
 git commit -m "feat: add /api/sessions endpoints (list, create, get) with share token generation"
 ```
 
@@ -1686,13 +1686,13 @@ This task verifies the app boots end-to-end without containers. It is manual; sk
 - [ ] **Step 1: Start a local Postgres**
 
 ```bash
-docker run --rm -d --name ns-pg -e POSTGRES_DB=nameselect -e POSTGRES_USER=ns -e POSTGRES_PASSWORD=ns -p 5432:5432 postgres:16
+docker run --rm -d --name ns-pg -e POSTGRES_DB=nomelo -e POSTGRES_USER=ns -e POSTGRES_PASSWORD=ns -p 5432:5432 postgres:16
 ```
 
 - [ ] **Step 2: Run the app**
 
 ```bash
-cd src/NameSelect.Server
+cd src/Nomelo.Server
 dotnet run --launch-profile http
 ```
 
@@ -1727,7 +1727,7 @@ No commit — verification only.
 ## Self-Review Notes
 
 - All entities, DTOs, scanner, loader, endpoints, and tests defined inline — no placeholders.
-- Auth flow uses real OIDC in production code; tests substitute `TestAuthHandler` via `NameSelectAppFactory`.
+- Auth flow uses real OIDC in production code; tests substitute `TestAuthHandler` via `NomeloAppFactory`.
 - `Program.cs` exposes `public partial class Program;` so `WebApplicationFactory<Program>` works.
 - Spec coverage check: §1 problem statement (covered by intent), §2 architecture (project layout — Docker is Plan 4), §3 auth (Task 6), §4 name lists (Tasks 4–5), §5 data model (Tasks 2–3), §6–§8 ELO/pair selection/completion (out of scope, Plan 2), §9 UI (Plan 3), §10 API: `/api/lists` (Task 9), `/api/sessions` (Task 10) — remaining endpoints belong to Plan 2, §11 deployment (Plan 4).
 - Type consistency: `VoteResult` enum names are PascalCase in C# and stored as strings; Plan 2 will convert to the spec's snake_case via `[EnumMember]` attributes or a value converter when introducing the votes endpoint.
@@ -1737,7 +1737,7 @@ No commit — verification only.
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-18-nameselect-backend-foundation.md`. Two execution options:
+Plan complete and saved to `docs/superpowers/plans/2026-05-18-nomelo-backend-foundation.md`. Two execution options:
 
 1. **Subagent-Driven (recommended)** — fresh subagent per task, review between tasks, fast iteration.
 2. **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints.
