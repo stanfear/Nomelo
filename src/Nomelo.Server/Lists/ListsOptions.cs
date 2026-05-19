@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Nomelo.Server.Configuration;
+namespace Nomelo.Server.Lists;
 
 public class ListsOptions
 {

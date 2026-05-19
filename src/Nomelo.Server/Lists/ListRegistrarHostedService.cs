@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Nomelo.Server.Configuration;
 using Nomelo.Server.Data;
 using Nomelo.Server.Data.Entities;
 

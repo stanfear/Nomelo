@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Nomelo.Server.Auth;
-using Nomelo.Server.Configuration;
 using Nomelo.Server.Data;
 using Nomelo.Server.Endpoints;
 using Nomelo.Server.Infrastructure;
