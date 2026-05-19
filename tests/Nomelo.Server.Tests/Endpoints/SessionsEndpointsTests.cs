@@ -13,6 +13,7 @@ public class SessionsEndpointsTests : IAsyncLifetime
     private readonly PostgresFixture _pg;
     private NomeloAppFactory _factory = default!;
     private string _listsDir = "";
+    private readonly string _userPrefix = $"u-{Guid.NewGuid():N}-";
 
     public SessionsEndpointsTests(PostgresFixture pg) => _pg = pg;
 
@@ -80,11 +81,11 @@ public class SessionsEndpointsTests : IAsyncLifetime
     public async Task GET_returns_only_current_user_sessions()
     {
         var alice = _factory.CreateClient();
-        alice.DefaultRequestHeaders.Add("X-Test-User", "alice");
+        alice.DefaultRequestHeaders.Add("X-Test-User", _userPrefix + "alice");
         await alice.PostAsJsonAsync("/api/sessions", new CreateSessionRequest("a", 3));
 
         var bob = _factory.CreateClient();
-        bob.DefaultRequestHeaders.Add("X-Test-User", "bob");
+        bob.DefaultRequestHeaders.Add("X-Test-User", _userPrefix + "bob");
         await bob.PostAsJsonAsync("/api/sessions", new CreateSessionRequest("a", 3));
 
         var aliceList = await alice.GetFromJsonAsync<List<SessionDto>>("/api/sessions");
@@ -96,12 +97,12 @@ public class SessionsEndpointsTests : IAsyncLifetime
     public async Task GET_by_id_other_user_returns_404()
     {
         var alice = _factory.CreateClient();
-        alice.DefaultRequestHeaders.Add("X-Test-User", "alice");
+        alice.DefaultRequestHeaders.Add("X-Test-User", _userPrefix + "alice");
         var created = await (await alice.PostAsJsonAsync("/api/sessions",
             new CreateSessionRequest("a", 3))).Content.ReadFromJsonAsync<SessionDto>();
 
         var bob = _factory.CreateClient();
-        bob.DefaultRequestHeaders.Add("X-Test-User", "bob");
+        bob.DefaultRequestHeaders.Add("X-Test-User", _userPrefix + "bob");
 
         var res = await bob.GetAsync($"/api/sessions/{created!.Id}");
 
