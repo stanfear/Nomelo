@@ -955,8 +955,8 @@ namespace Nomelo.Server.Auth;
 
 public static class AuthExtensions
 {
-    public const string CookieScheme = "nm-cookie";
-    public const string OidcScheme = "nm-oidc";
+    public const string CookieScheme = "ne-cookie";
+    public const string OidcScheme = "ne-oidc";
 
     public static IServiceCollection AddNomeloAuth(this IServiceCollection services, IConfiguration config)
     {
@@ -968,7 +968,7 @@ public static class AuthExtensions
             })
             .AddCookie(CookieScheme, opt =>
             {
-                opt.Cookie.Name = "nm_auth";
+                opt.Cookie.Name = "ne_auth";
                 opt.Cookie.HttpOnly = true;
                 opt.Cookie.SameSite = SameSiteMode.Strict;
                 opt.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
