@@ -8,12 +8,13 @@ public static class ListsEndpoints
 {
     public static IEndpointRouteBuilder MapListsEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/lists", async (AppDbContext db) =>
+        app.MapGet("/api/lists", async (AppDbContext db, CancellationToken ct) =>
         {
             var lists = await db.Lists
+                .AsNoTracking()
                 .OrderBy(l => l.Name)
                 .Select(l => new ListDto(l.Id, l.Name, l.ItemCount))
-                .ToListAsync();
+                .ToListAsync(ct);
             return Results.Ok(lists);
         }).RequireAuthorization();
 

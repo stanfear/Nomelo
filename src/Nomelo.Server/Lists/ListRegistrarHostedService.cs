@@ -1,31 +1,21 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Nomelo.Server.Configuration;
 using Nomelo.Server.Data;
 using Nomelo.Server.Data.Entities;
 
 namespace Nomelo.Server.Lists;
 
-public class ListRegistrarHostedService : IHostedService
+public class ListRegistrarHostedService(
+    IServiceProvider services,
+    IOptions<ListsOptions> options,
+    ILogger<ListRegistrarHostedService> log) : IHostedService
 {
-    private readonly IServiceProvider _services;
-    private readonly IConfiguration _config;
-    private readonly ILogger<ListRegistrarHostedService> _log;
-
-    public ListRegistrarHostedService(
-        IServiceProvider services,
-        IConfiguration config,
-        ILogger<ListRegistrarHostedService> log)
-    {
-        _services = services;
-        _config = config;
-        _log = log;
-    }
-
     public async Task StartAsync(CancellationToken ct)
     {
-        var dir = _config["Lists:Directory"]
-                  ?? throw new InvalidOperationException("Lists:Directory not configured");
+        var dir = options.Value.Directory;
 
-        using var scope = _services.CreateScope();
+        using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var scanner = scope.ServiceProvider.GetRequiredService<ListDirectoryScanner>();
 
@@ -37,7 +27,7 @@ public class ListRegistrarHostedService : IHostedService
         {
             if (r.Error is not null)
             {
-                _log.LogWarning("Skipping list file {Path}: {Error}", r.Path, r.Error);
+                log.LogWarning("Skipping list file {Path}: {Error}", r.Path, r.Error);
                 continue;
             }
 
@@ -75,7 +65,7 @@ public class ListRegistrarHostedService : IHostedService
             var hasSessions = await db.Sessions.AnyAsync(s => s.ListId == staleId, ct);
             if (hasSessions)
             {
-                _log.LogWarning("List {ListId} disappeared from disk but has existing sessions; keeping the row", staleId);
+                log.LogWarning("List {ListId} disappeared from disk but has existing sessions; keeping the row", staleId);
                 continue;
             }
             var toRemove = await db.Lists.FirstAsync(l => l.Id == staleId, ct);
@@ -83,7 +73,7 @@ public class ListRegistrarHostedService : IHostedService
         }
 
         await db.SaveChangesAsync(ct);
-        _log.LogInformation("Registered {Count} lists from {Dir}", seenIds.Count, dir);
+        log.LogInformation("Registered {Count} lists from {Dir}", seenIds.Count, dir);
     }
 
     public Task StopAsync(CancellationToken ct) => Task.CompletedTask;

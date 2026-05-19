@@ -14,7 +14,19 @@ public class ListFileLoader
         using var stream = File.OpenRead(path);
         var raw = JsonSerializer.Deserialize<RawList>(stream, Json)
                   ?? throw new ListFileException($"empty or invalid JSON: {path}");
+        return Build(raw, path);
+    }
 
+    public async Task<ListFile> LoadAsync(string path, CancellationToken ct = default)
+    {
+        await using var stream = File.OpenRead(path);
+        var raw = await JsonSerializer.DeserializeAsync<RawList>(stream, Json, ct)
+                  ?? throw new ListFileException($"empty or invalid JSON: {path}");
+        return Build(raw, path);
+    }
+
+    private static ListFile Build(RawList raw, string path)
+    {
         if (string.IsNullOrWhiteSpace(raw.Id))
             throw new ListFileException($"missing 'id' in {path}");
         if (string.IsNullOrWhiteSpace(raw.Name))

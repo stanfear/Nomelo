@@ -1,10 +1,12 @@
-using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Nomelo.Server.Auth;
 using Nomelo.Server.Data;
 using Nomelo.Server.Data.Entities;
 using Nomelo.Shared.Dtos;
 
 namespace Nomelo.Server.Endpoints;
+
+internal sealed class SessionsEndpointsLog;
 
 public static class SessionsEndpoints
 {
@@ -12,22 +14,24 @@ public static class SessionsEndpoints
     {
         var group = app.MapGroup("/api/sessions").RequireAuthorization();
 
-        group.MapGet("", async (AppDbContext db, ClaimsPrincipal user) =>
+        group.MapGet("", async (AppDbContext db, ICurrentUser currentUser, CancellationToken ct) =>
         {
-            var userId = RequireUserId(user);
+            var userId = currentUser.UserId;
             var sessions = await db.Sessions
+                .AsNoTracking()
                 .Where(s => s.UserId == userId)
                 .OrderByDescending(s => s.UpdatedAt)
-                .Join(db.Lists, s => s.ListId, l => l.Id,
+                .Join(db.Lists.AsNoTracking(), s => s.ListId, l => l.Id,
                     (s, l) => new { s, ListName = l.Name })
-                .ToListAsync();
+                .ToListAsync(ct);
 
             var ids = sessions.Select(x => x.s.Id).ToList();
             var counts = await db.Votes
+                .AsNoTracking()
                 .Where(v => ids.Contains(v.SessionId))
                 .GroupBy(v => v.SessionId)
                 .Select(g => new { g.Key, Count = g.Count() })
-                .ToDictionaryAsync(g => g.Key, g => g.Count);
+                .ToDictionaryAsync(g => g.Key, g => g.Count, ct);
 
             var dtos = sessions.Select(x => new SessionDto(
                 x.s.Id, x.s.ListId, x.ListName, x.s.ConfidenceThreshold,
@@ -37,15 +41,26 @@ public static class SessionsEndpoints
             return Results.Ok(dtos);
         });
 
-        group.MapPost("", async (CreateSessionRequest req, AppDbContext db, ClaimsPrincipal user) =>
+        group.MapPost("", async (
+            CreateSessionRequest req,
+            AppDbContext db,
+            ICurrentUser currentUser,
+            ILogger<SessionsEndpointsLog> logger,
+            CancellationToken ct) =>
         {
             if (req.ConfidenceThreshold < 1 || req.ConfidenceThreshold > 10)
                 return Results.BadRequest(new { error = "confidenceThreshold must be between 1 and 10" });
 
-            var list = await db.Lists.FirstOrDefaultAsync(l => l.Id == req.ListId);
-            if (list is null) return Results.NotFound(new { error = "list not found" });
+            var list = await db.Lists
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Id == req.ListId, ct);
+            if (list is null)
+            {
+                logger.LogWarning("Create session rejected: list {ListId} not found", req.ListId);
+                return Results.NotFound(new { error = "list not found" });
+            }
 
-            var userId = RequireUserId(user);
+            var userId = currentUser.UserId;
             var now = DateTimeOffset.UtcNow;
             var session = new VotingSession
             {
@@ -58,7 +73,10 @@ public static class SessionsEndpoints
                 ShareToken = GenerateShareToken()
             };
             db.Sessions.Add(session);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(ct);
+
+            logger.LogInformation("Session {SessionId} created for user {UserId} on list {ListId}",
+                session.Id, userId, list.Id);
 
             var dto = new SessionDto(session.Id, list.Id, list.Name,
                 session.ConfidenceThreshold, session.CreatedAt, session.UpdatedAt,
@@ -66,14 +84,20 @@ public static class SessionsEndpoints
             return Results.Created($"/api/sessions/{session.Id}", dto);
         });
 
-        group.MapGet("/{id:guid}", async (Guid id, AppDbContext db, ClaimsPrincipal user) =>
+        group.MapGet("/{id:guid}", async (Guid id, AppDbContext db, ICurrentUser currentUser, CancellationToken ct) =>
         {
-            var userId = RequireUserId(user);
-            var session = await db.Sessions.FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
+            var userId = currentUser.UserId;
+            var session = await db.Sessions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId, ct);
             if (session is null) return Results.NotFound();
 
-            var list = await db.Lists.FirstAsync(l => l.Id == session.ListId);
-            var voteCount = await db.Votes.CountAsync(v => v.SessionId == id);
+            var list = await db.Lists
+                .AsNoTracking()
+                .FirstAsync(l => l.Id == session.ListId, ct);
+            var voteCount = await db.Votes
+                .AsNoTracking()
+                .CountAsync(v => v.SessionId == id, ct);
 
             return Results.Ok(new SessionDto(session.Id, list.Id, list.Name,
                 session.ConfidenceThreshold, session.CreatedAt, session.UpdatedAt,
@@ -81,15 +105,6 @@ public static class SessionsEndpoints
         });
 
         return app;
-    }
-
-    private static string RequireUserId(ClaimsPrincipal user)
-    {
-        var sub = user.FindFirst("sub")?.Value
-                  ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(sub))
-            throw new InvalidOperationException("user has no sub claim");
-        return sub;
     }
 
     private static string GenerateShareToken()
