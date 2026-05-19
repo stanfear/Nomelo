@@ -55,7 +55,7 @@ app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHealthChecks("/healthz");
+app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapListsEndpoints();
 app.MapSessionsEndpoints();

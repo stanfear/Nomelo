@@ -138,7 +138,7 @@ Create `ops/healthcheck.sh`:
 ```bash
 #!/bin/sh
 set -e
-curl -fsS http://localhost:8080/healthz > /dev/null
+curl -fsS http://localhost:8080/health > /dev/null
 ```
 
 - [ ] **Step 3: Commit**
@@ -297,7 +297,7 @@ cp .env.example .env
 # edit .env: set DB_PASSWORD to something non-empty; OIDC values optional for boot-only smoke
 ```
 
-OIDC values can be empty for this smoke test: the auth middleware initialises lazily, and `/healthz` plus list registration don't require it. Endpoints under `RequireAuthorization()` will 401, which is the correct behaviour.
+OIDC values can be empty for this smoke test: the auth middleware initialises lazily, and `/health` plus list registration don't require it. Endpoints under `RequireAuthorization()` will 401, which is the correct behaviour.
 
 - [ ] **Step 2: Start the stack**
 
@@ -320,10 +320,10 @@ Expected log lines (excerpt):
 
 Stop tailing with Ctrl-C.
 
-- [ ] **Step 4: Hit /healthz**
+- [ ] **Step 4: Hit /health**
 
 ```bash
-curl -fsS http://localhost:8080/healthz
+curl -fsS http://localhost:8080/health
 ```
 
 Expected: `{"status":"ok"}`.
@@ -587,7 +587,7 @@ No commit — verification only.
 
 **Type / contract consistency:**
 - Env var names in `docker-compose.yml` (`ConnectionStrings__Default`, `OIDC__*`, `Lists__Directory`) match `Program.cs` configuration keys from Plans 1–3.
-- Healthcheck endpoint `/healthz` exists from Plan 1.
+- Healthcheck endpoint `/health` exists from Plan 1.
 - Port 8080 is set via `ASPNETCORE_URLS` in the Dockerfile and exposed identically in compose.
 
 **Operational note:** the `Nomelo.Client.csproj` from Plan 1 has an `AfterTargets="Build"` Node step. That target runs only when the Client project is built directly (e.g., `dotnet build Nomelo.sln`). The Dockerfile bypasses it by publishing only the Server project, so the runtime image build does not require Node inside the .NET SDK stage. If a developer runs a full solution build outside Docker, Node must be installed locally — call this out in a follow-up CONTRIBUTING note if friction emerges.

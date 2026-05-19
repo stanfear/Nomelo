@@ -131,7 +131,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var app = builder.Build();
 
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
 
@@ -388,7 +388,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 var app = builder.Build();
 
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
 
@@ -455,7 +455,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
 ```
@@ -1064,7 +1064,7 @@ using (var scope = app.Services.CreateScope())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
 
 app.Run();
@@ -1698,10 +1698,10 @@ dotnet run --launch-profile http
 
 Expected: log line "Registered 1 lists from ./lists", server listening on http://localhost:5000 (or similar).
 
-- [ ] **Step 3: Hit /healthz**
+- [ ] **Step 3: Hit /health**
 
 ```bash
-curl -i http://localhost:5000/healthz
+curl -i http://localhost:5000/health
 ```
 
 Expected: `200 OK` with `{"status":"ok"}`.

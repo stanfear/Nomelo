@@ -1624,7 +1624,7 @@ app.UseAuthorization();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
 app.MapListsEndpoints();
 app.MapSessionsEndpoints();
