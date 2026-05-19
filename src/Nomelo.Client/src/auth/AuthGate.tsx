@@ -10,6 +10,17 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }, [error]);
 
   if (isLoading) return <div role="status">Chargement…</div>;
+
+  if (error && !(error instanceof UnauthorizedError)) {
+    return (
+      <div role="alert" className="auth-error">
+        <h1>Connexion impossible</h1>
+        <p>{error instanceof Error ? error.message : "Erreur inconnue"}</p>
+        <button type="button" onClick={() => window.location.reload()}>Réessayer</button>
+      </div>
+    );
+  }
+
   if (!data) return null;
   return <>{children}</>;
 }

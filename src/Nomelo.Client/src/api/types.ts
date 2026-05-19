@@ -13,6 +13,7 @@ export interface SessionDto {
   updatedAt: string;
   shareToken: string | null;
   voteCount: number;
+  stabilityReached: boolean;
 }
 
 export interface CreateSessionRequest {

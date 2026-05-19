@@ -15,6 +15,7 @@ const ALICE: SessionDto = {
   updatedAt: "2026-05-02T00:00:00Z",
   shareToken: "share-tok",
   voteCount: 7,
+  stabilityReached: false,
 };
 
 const LIST: ListDto = { id: "a", name: "Liste A", itemCount: 12 };

@@ -19,7 +19,24 @@ export function VotingPage() {
     submit.mutate({ itemA: pair.data.a.value, itemB: pair.data.b.value, result });
   };
 
-  if (pair.isLoading || !pair.data) return <p>Chargement…</p>;
+  const sending = submit.isPending || pair.isFetching;
+
+  if (pair.isLoading) return <p>Chargement…</p>;
+
+  if (!pair.data) {
+    return (
+      <main className="voting">
+        <header className="voting__header">
+          <Link to="/">← Accueil</Link>
+          <span>{session.data?.listName}</span>
+        </header>
+        <section className="voting__empty">
+          <p>Plus de paires disponibles. Tous les éléments restants sont équivalents ou bannis.</p>
+          <Link to={`/sessions/${id}/results`}>Voir les résultats</Link>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="voting">
@@ -31,7 +48,7 @@ export function VotingPage() {
         <Link to={`/sessions/${id}/results`}>Voir les résultats</Link>
       </header>
 
-      {!bannerDismissed && session.data && session.data.voteCount >= 100 && (
+      {!bannerDismissed && session.data?.stabilityReached && (
         <StabilityBanner onDismiss={() => setBannerDismissed(true)} />
       )}
 
@@ -41,18 +58,20 @@ export function VotingPage() {
           side="A"
           onPrefer={() => send("prefer_a")}
           onBan={() => send("ban_a")}
+          disabled={sending}
         />
         <NameCard
           item={pair.data.b}
           side="B"
           onPrefer={() => send("prefer_b")}
           onBan={() => send("ban_b")}
+          disabled={sending}
         />
       </section>
 
       <footer className="voting__shared">
-        <button type="button" onClick={() => send("ban_both")}>🚫 Bannir les deux</button>
-        <button type="button" onClick={() => send("like_both")}>💛 J'aime les deux</button>
+        <button type="button" disabled={sending} onClick={() => send("ban_both")}>🚫 Bannir les deux</button>
+        <button type="button" disabled={sending} onClick={() => send("like_both")}>💛 J'aime les deux</button>
       </footer>
     </main>
   );

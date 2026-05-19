@@ -15,9 +15,13 @@ export function NewSessionDialog({ onClose }: Props) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!listId) return;
-    const session = await create.mutateAsync({ listId, confidenceThreshold: threshold });
-    onClose();
-    navigate(`/sessions/${session.id}`);
+    try {
+      const session = await create.mutateAsync({ listId, confidenceThreshold: threshold });
+      onClose();
+      navigate(`/sessions/${session.id}`);
+    } catch {
+      // error is captured in create.error; rendered below
+    }
   };
 
   return (
@@ -41,6 +45,11 @@ export function NewSessionDialog({ onClose }: Props) {
             onChange={(e) => setThreshold(Number(e.target.value))}
           />
         </label>
+        {create.isError && (
+          <p role="alert" className="dialog__error">
+            {create.error instanceof Error ? create.error.message : "Erreur lors de la création"}
+          </p>
+        )}
         <div className="dialog__actions">
           <button type="button" onClick={onClose}>Annuler</button>
           <button type="submit" disabled={!listId || create.isPending}>Démarrer</button>

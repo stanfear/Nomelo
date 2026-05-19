@@ -6,9 +6,10 @@ interface Props {
   side: "A" | "B";
   onPrefer: () => void;
   onBan: () => void;
+  disabled?: boolean;
 }
 
-export function NameCard({ item, side, onPrefer, onBan }: Props) {
+export function NameCard({ item, side, onPrefer, onBan, disabled }: Props) {
   const [showDesc, setShowDesc] = useState(false);
   return (
     <section className="name-card" data-side={side}>
@@ -33,10 +34,10 @@ export function NameCard({ item, side, onPrefer, onBan }: Props) {
         </>
       )}
       <div className="name-card__actions">
-        <button type="button" onClick={onBan} aria-label={`Bannir ${item.value}`}>
+        <button type="button" onClick={onBan} disabled={disabled} aria-label={`Bannir ${item.value}`}>
           🚫 Bannir
         </button>
-        <button type="button" onClick={onPrefer} aria-label={`Préférer ${item.value}`}>
+        <button type="button" onClick={onPrefer} disabled={disabled} aria-label={`Préférer ${item.value}`}>
           ❤️ Préférer
         </button>
       </div>
