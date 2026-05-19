@@ -955,8 +955,8 @@ namespace Nomelo.Server.Auth;
 
 public static class AuthExtensions
 {
-    public const string CookieScheme = "ns-cookie";
-    public const string OidcScheme = "ns-oidc";
+    public const string CookieScheme = "nm-cookie";
+    public const string OidcScheme = "nm-oidc";
 
     public static IServiceCollection AddNomeloAuth(this IServiceCollection services, IConfiguration config)
     {
