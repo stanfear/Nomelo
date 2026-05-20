@@ -1,0 +1,39 @@
+:root {
+  /* Side A gradient (corail → orange) */
+  --color-a-from: #ff6b6b;
+  --color-a-to: #ffa940;
+
+  /* Side B gradient (bleu ciel → violet) */
+  --color-b-from: #4dabf7;
+  --color-b-to: #5f3dc4;
+
+  /* Action colors */
+  --color-like: #ffd43b;
+  --color-like-ink: #5c3d00;
+  --color-ban: #fa5252;
+  --color-ban-ink: #ffffff;
+
+  /* Surfaces */
+  --color-bg: #1a1a2e;
+  --color-bg-elev: #232347;
+  --color-text: #f8f9fa;
+  --color-text-muted: rgba(248, 249, 250, 0.72);
+  --color-text-on-bright: #ffffff;
+  --color-overlay: rgba(15, 15, 30, 0.72);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.2);
+  --shadow-pop: 0 6px 24px rgba(0, 0, 0, 0.35);
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slide: 400ms;
+  --easing-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

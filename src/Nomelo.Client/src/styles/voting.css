@@ -1,11 +1,372 @@
-.voting { display: grid; grid-template-rows: auto 1fr auto; min-height: 100dvh; }
-.voting__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; }
-.voting__shared { display: flex; justify-content: center; gap: 1rem; padding: 1rem; }
-.name-card { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1rem; }
-.name-card__value { font-size: clamp(2rem, 6vw, 4rem); margin: 0; text-align: center; }
-.name-card__variants { color: #666; }
-.name-card__actions { display: flex; gap: 0.5rem; margin-top: auto; }
-@media (orientation: portrait) {
-  .orientation-hint { display: block; background: #fff7d6; padding: 0.5rem; text-align: center; }
+/* ============================================================
+   Voting page — split-screen "would you rather" / Kahoot vibe
+   ============================================================ */
+
+.voting {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow: hidden;
 }
+
+/* ---------- Header ---------- */
+.voting__header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(26, 26, 46, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.voting__header a {
+  color: var(--color-text);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-pill);
+  transition: background var(--duration-fast);
+}
+.voting__header a:hover { background: rgba(255, 255, 255, 0.08); }
+
+.voting__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+.voting__title-name { font-weight: 700; font-size: 0.95rem; }
+.voting__title-count {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Empty state ---------- */
+.voting__empty {
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+.voting__empty a {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ---------- Pair grid (split-screen) ---------- */
+.voting__pair {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+
+/* "OU" centerpiece */
+.voting__or {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  width: clamp(56px, 7vw, 88px);
+  height: clamp(56px, 7vw, 88px);
+  border-radius: 50%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: clamp(1rem, 1.6vw, 1.5rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1), var(--shadow-pop);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- Name card (one half of the screen) ---------- */
+.name-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform var(--duration-fast) var(--easing-out),
+              filter var(--duration-fast) var(--easing-out);
+}
+
+.name-card[data-side="A"] {
+  background: linear-gradient(135deg, var(--color-a-from), var(--color-a-to));
+}
+.name-card[data-side="B"] {
+  background: linear-gradient(135deg, var(--color-b-from), var(--color-b-to));
+}
+
+.name-card:hover { transform: scale(1.015); }
+.name-card:active { transform: scale(0.995); }
+
+/* Fullface invisible button covering the whole side (captures primary click) */
+.name-card__prefer-fullface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-on-bright);
+  cursor: pointer;
+  font: inherit;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+.name-card__prefer-fullface:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -8px;
+  border-radius: var(--radius-lg);
+}
+.name-card__prefer-fullface:disabled { cursor: not-allowed; opacity: 0.85; }
+
+/* Hint badge: "Cliquer pour préférer" */
+.name-card__prefer-hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-on-bright);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Visually-hidden text used by the accessible button label */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+.name-card__value {
+  font-size: clamp(2.5rem, 9vw, 6.5rem);
+  font-weight: 900;
+  margin: 0;
+  line-height: 1;
+  color: var(--color-text-on-bright);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  letter-spacing: -0.02em;
+}
+
+.name-card__variants {
+  margin: 0;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  max-width: 80%;
+}
+
+/* Info icon (top-right of side) */
+.name-card__info {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--color-text-on-bright);
+  font-weight: 800;
+  font-style: italic;
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background var(--duration-fast), transform var(--duration-fast);
+}
+.name-card__info:hover { background: rgba(255, 255, 255, 0.35); transform: scale(1.08); }
+
+/* Ban button (bottom corner of side) */
+.name-card__ban {
+  position: absolute;
+  bottom: 1rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.95rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--color-text-on-bright);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background var(--duration-fast), transform var(--duration-fast);
+}
+.name-card[data-side="A"] .name-card__ban { left: 1rem; }
+.name-card[data-side="B"] .name-card__ban { right: 1rem; }
+.name-card__ban:hover { background: var(--color-ban); transform: translateY(-1px); }
+.name-card__ban:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Description popover */
+.name-card__description {
+  position: absolute;
+  top: 4rem;
+  right: 0.9rem;
+  left: 0.9rem;
+  z-index: 6;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: var(--color-overlay);
+  color: var(--color-text-on-bright);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  box-shadow: var(--shadow-pop);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeIn var(--duration-fast) var(--easing-out);
+}
+
+/* ---------- Slide-in animation per side ---------- */
+@keyframes slideInLeft {
+  from { transform: translateX(-60px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes slideInRight {
+  from { transform: translateX(60px);  opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.name-card[data-side="A"] .name-card__value,
+.name-card[data-side="A"] .name-card__variants {
+  animation: slideInLeft var(--duration-slide) var(--easing-out) both;
+}
+.name-card[data-side="B"] .name-card__value,
+.name-card[data-side="B"] .name-card__variants {
+  animation: slideInRight var(--duration-slide) var(--easing-out) both;
+}
+.name-card[data-side="A"] .name-card__variants { animation-delay: 80ms; }
+.name-card[data-side="B"] .name-card__variants { animation-delay: 80ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .name-card, .name-card *, .name-card__description { animation: none !important; transition: none !important; }
+}
+
+/* ---------- Shared footer (J'aime / Bannir les deux) ---------- */
+.voting__shared {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom));
+  background: rgba(15, 15, 30, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.voting__shared button {
+  flex: 1;
+  appearance: none;
+  border: 0;
+  padding: 0.95rem 1rem;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: transform var(--duration-fast), filter var(--duration-fast),
+              box-shadow var(--duration-fast);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+}
+.voting__shared button:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.voting__shared button:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
+.voting__shared button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.voting__shared .btn-like {
+  background: var(--color-like);
+  color: var(--color-like-ink);
+}
+.voting__shared .btn-ban {
+  background: var(--color-ban);
+  color: var(--color-ban-ink);
+}
+
+/* ---------- Orientation hint ---------- */
+@media (orientation: portrait) {
+  .orientation-hint {
+    display: block;
+    background: #fff7d6;
+    color: #3a2f00;
+    padding: 0.5rem;
+    text-align: center;
+  }
+
+  .voting__pair {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .name-card[data-side="A"] .name-card__value,
+  .name-card[data-side="A"] .name-card__variants {
+    animation-name: slideInTop;
+  }
+  .name-card[data-side="B"] .name-card__value,
+  .name-card[data-side="B"] .name-card__variants {
+    animation-name: slideInBottom;
+  }
+  /* Move ban buttons to a non-overlapping corner in portrait */
+  .name-card[data-side="A"] .name-card__ban { left: auto; right: 1rem; bottom: 0.6rem; }
+  .name-card[data-side="B"] .name-card__ban { right: 1rem; left: auto; bottom: 0.6rem; }
+}
+
 @media (orientation: landscape) { .orientation-hint { display: none; } }
+
+@keyframes slideInTop {
+  from { transform: translateY(-40px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes slideInBottom {
+  from { transform: translateY(40px);  opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}

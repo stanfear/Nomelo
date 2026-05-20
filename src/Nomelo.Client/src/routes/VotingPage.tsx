@@ -38,13 +38,19 @@ export function VotingPage() {
     );
   }
 
+  const voteCount = session.data?.voteCount ?? 0;
+  const pairKey = `${pair.data.a.value}__${pair.data.b.value}`;
+
   return (
     <main className="voting">
       <OrientationHint />
 
       <header className="voting__header">
         <Link to="/">← Accueil</Link>
-        <span>{session.data?.listName}</span>
+        <span className="voting__title">
+          <span className="voting__title-name">{session.data?.listName}</span>
+          <span className="voting__title-count">{voteCount} vote{voteCount > 1 ? "s" : ""}</span>
+        </span>
         <Link to={`/sessions/${id}/results`}>Voir les résultats</Link>
       </header>
 
@@ -52,7 +58,7 @@ export function VotingPage() {
         <StabilityBanner onDismiss={() => setBannerDismissed(true)} />
       )}
 
-      <section className="voting__pair">
+      <section className="voting__pair" key={pairKey}>
         <NameCard
           item={pair.data.a}
           side="A"
@@ -60,6 +66,7 @@ export function VotingPage() {
           onBan={() => send("ban_a")}
           disabled={sending}
         />
+        <div className="voting__or" aria-hidden="true">ou</div>
         <NameCard
           item={pair.data.b}
           side="B"
@@ -70,8 +77,22 @@ export function VotingPage() {
       </section>
 
       <footer className="voting__shared">
-        <button type="button" disabled={sending} onClick={() => send("ban_both")}>🚫 Bannir les deux</button>
-        <button type="button" disabled={sending} onClick={() => send("like_both")}>💛 J'aime les deux</button>
+        <button
+          type="button"
+          className="btn-ban"
+          disabled={sending}
+          onClick={() => send("ban_both")}
+        >
+          <span aria-hidden="true">🚫</span> Bannir les deux
+        </button>
+        <button
+          type="button"
+          className="btn-like"
+          disabled={sending}
+          onClick={() => send("like_both")}
+        >
+          <span aria-hidden="true">💛</span> J'aime les deux
+        </button>
       </footer>
     </main>
   );

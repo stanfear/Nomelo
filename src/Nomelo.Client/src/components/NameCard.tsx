@@ -11,14 +11,32 @@ interface Props {
 
 export function NameCard({ item, side, onPrefer, onBan, disabled }: Props) {
   const [showDesc, setShowDesc] = useState(false);
+
+  const stop = (handler: () => void) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handler();
+  };
+
   return (
     <section className="name-card" data-side={side}>
-      <h2 className="name-card__value">{item.value}</h2>
-      {item.variants.length > 0 && (
-        <p className="name-card__variants" data-testid="variants">
-          {item.variants.join(" · ")}
-        </p>
-      )}
+      <button
+        type="button"
+        className="name-card__prefer-fullface"
+        onClick={onPrefer}
+        disabled={disabled}
+        aria-label={`Préférer ${item.value}`}
+      >
+        <span className="name-card__value">{item.value}</span>
+        {item.variants.length > 0 && (
+          <span className="name-card__variants" data-testid="variants">
+            {item.variants.join(" · ")}
+          </span>
+        )}
+        <span className="name-card__prefer-hint" aria-hidden="true">
+          Cliquer pour préférer
+        </span>
+      </button>
+
       {item.description && (
         <>
           <button
@@ -26,21 +44,28 @@ export function NameCard({ item, side, onPrefer, onBan, disabled }: Props) {
             className="name-card__info"
             aria-expanded={showDesc}
             aria-label={`Plus d'infos sur ${item.value}`}
-            onClick={() => setShowDesc((v) => !v)}
+            onClick={stop(() => setShowDesc((v) => !v))}
           >
             i
           </button>
-          {showDesc && <p className="name-card__description">{item.description}</p>}
+          {showDesc && (
+            <p className="name-card__description" role="note">
+              {item.description}
+            </p>
+          )}
         </>
       )}
-      <div className="name-card__actions">
-        <button type="button" onClick={onBan} disabled={disabled} aria-label={`Bannir ${item.value}`}>
-          🚫 Bannir
-        </button>
-        <button type="button" onClick={onPrefer} disabled={disabled} aria-label={`Préférer ${item.value}`}>
-          ❤️ Préférer
-        </button>
-      </div>
+
+      <button
+        type="button"
+        className="name-card__ban"
+        onClick={stop(onBan)}
+        disabled={disabled}
+        aria-label={`Bannir ${item.value}`}
+      >
+        <span aria-hidden="true">🗑️</span>
+        <span>Bannir</span>
+      </button>
     </section>
   );
 }
