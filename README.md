@@ -64,7 +64,7 @@ The Aspire dashboard opens at the URL shown in the console (typically `https://l
 
 The OIDC discovery document is at `https://nomelo.localhost:8443/.well-known/openid-configuration`. The nomelo client is pre-declared via env vars on the TinyAuth resource; no manual provider setup is needed.
 
-Default login: `admin` / `admin` (change `tinyauth-admin-users` to override).
+Default login: `admin` / `dev123!` (change `tinyauth-admin-users` to override).
 
 ### Running tests
 
