@@ -639,16 +639,12 @@
   border: 1px solid rgba(214, 139, 72, 0.35);
 }
 
-/* Tied continuation row: indented child of the rank-group leader. The flex
+/* Tied continuation row: same card chrome as the leader (background, border)
+   but with a slight left indent and no medal/badge in the rank cell. The flex
    column parent stretches to the cross axis, so margin-left shifts the row's
    left edge inward while keeping its right edge aligned with the leader's. */
 .ranked__row[data-tied="continuation"] {
   margin-left: 1.5rem;
-  background: transparent;
-  border-color: transparent;
-}
-.ranked__row[data-tied="continuation"]:hover {
-  background: var(--surface-card-hover);
 }
 .ranked__row[data-tied="continuation"] .ranked__rank {
   background: transparent;
