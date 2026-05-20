@@ -75,6 +75,55 @@ cd src/Nomelo.Client && npm test         # 18 client tests
 
 These tests are independent of the Aspire stack — they spin their own Postgres / MSW mocks.
 
-### Production deployment
+## Deployment
 
-See `docker-compose.yml` and `ops/authentik-setup.md` (created in Plan 4). Aspire is for local dev only.
+Nomelo ships as a single Docker image plus PostgreSQL. Aspire is for local dev only; production deployments use `docker compose`.
+
+### Prerequisites
+- Docker 24+
+- Docker Compose v2
+- A running Authentik instance (or any OIDC provider; tested against Authentik)
+
+### Quick start
+
+```bash
+cp .env.example .env
+# fill DB_PASSWORD, OIDC_* values
+docker compose up --build -d
+```
+
+Once `app` is healthy, open `http://localhost:8080/`.
+
+### Name lists
+
+Drop JSON files in `./lists/` matching the format documented in `docs/superpowers/specs/2026-05-17-nomelo-design.md` §4. They are registered at container startup. Restart `app` after adding or modifying files:
+
+```bash
+docker compose restart app
+```
+
+### Authentik
+
+See `ops/authentik-setup.md` for the provider + application recipe.
+
+### Database backups
+
+```bash
+docker compose exec db pg_dump -U ns nomelo > backup-$(date +%F).sql
+```
+
+Restore:
+
+```bash
+cat backup-2026-05-18.sql | docker compose exec -T db psql -U ns nomelo
+```
+
+### Upgrades
+
+```bash
+git pull
+docker compose build app
+docker compose up -d app
+```
+
+EF Core migrations run automatically on container start.
