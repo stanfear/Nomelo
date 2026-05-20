@@ -439,6 +439,10 @@
   .name-card:hover::before  { transform: scaleY(1.02); }
   .name-card:active::before { transform: scaleY(0.99); }
 
+  .name-card[data-side="A"]:hover  .name-card__ripple-clip { clip-path: inset(0 0 -2% 0); }
+  .name-card[data-side="B"]:hover  .name-card__ripple-clip { clip-path: inset(-2% 0 0 0); }
+  .name-card[data-side="A"]:active .name-card__ripple-clip { clip-path: inset(0 0 1% 0); }
+  .name-card[data-side="B"]:active .name-card__ripple-clip { clip-path: inset(1% 0 0 0); }
 }
 
 @media (orientation: landscape) { .orientation-hint { display: none; } }
