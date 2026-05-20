@@ -9,7 +9,7 @@ public static class AuthExtensions
     public const string CookieScheme = "ne-cookie";
     public const string OidcScheme = "ne-oidc";
 
-    public static IServiceCollection AddNomeloAuth(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddNomeloAuth(this IServiceCollection services, IConfiguration config, IHostEnvironment env)
     {
         services
             .AddAuthentication(opt =>
@@ -41,6 +41,7 @@ public static class AuthExtensions
                 opt.Authority = config["OIDC:Authority"];
                 opt.ClientId = config["OIDC:ClientId"];
                 opt.ClientSecret = config["OIDC:ClientSecret"];
+                opt.RequireHttpsMetadata = !env.IsDevelopment();
                 opt.ResponseType = OpenIdConnectResponseType.Code;
                 opt.UsePkce = true;
                 opt.SaveTokens = false;
