@@ -347,6 +347,43 @@
   color: var(--color-ban-ink);
 }
 
+/* ---------- Keyboard shortcuts hint (desktop only) ---------- */
+.voting__shortcuts {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  background: rgba(15, 15, 30, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.voting__shortcuts kbd {
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 0.4rem;
+  min-width: 1.2rem;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.voting__shortcuts-sep {
+  opacity: 0.4;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .voting__shortcuts { display: flex; }
+}
+
 /* ---------- Orientation hint ---------- */
 @media (orientation: portrait) {
   .orientation-hint {

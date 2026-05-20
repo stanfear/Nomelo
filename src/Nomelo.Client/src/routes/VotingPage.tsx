@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useNextPair, useSession, useSubmitVote } from "../api/hooks";
 import { NameCard } from "../components/NameCard";
@@ -6,6 +6,13 @@ import { StabilityBanner } from "../components/StabilityBanner";
 import { OrientationHint } from "../components/OrientationHint";
 import type { VoteResult } from "../api/types";
 import "../styles/voting.css";
+
+const SHORTCUTS: Record<string, VoteResult> = {
+  ArrowLeft: "prefer_a",
+  ArrowRight: "prefer_b",
+  ArrowUp: "like_both",
+  ArrowDown: "ban_both",
+};
 
 export function VotingPage() {
   const { id = "" } = useParams();
@@ -20,6 +27,23 @@ export function VotingPage() {
   };
 
   const sending = submit.isPending || pair.isFetching;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (sending || !pair.data) return;
+      // Don't interfere when the user is typing in a form control.
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      const result = SHORTCUTS[e.key];
+      if (!result) return;
+      e.preventDefault();
+      send(result);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pair.data, sending]);
 
   if (pair.isLoading) return <p>Chargement…</p>;
 
@@ -94,6 +118,16 @@ export function VotingPage() {
           <span aria-hidden="true">💛</span> J'aime les deux
         </button>
       </footer>
+
+      <div className="voting__shortcuts" aria-hidden="true">
+        <kbd>←</kbd> préférer
+        <span className="voting__shortcuts-sep">·</span>
+        <kbd>→</kbd> préférer
+        <span className="voting__shortcuts-sep">·</span>
+        <kbd>↑</kbd> j'aime les deux
+        <span className="voting__shortcuts-sep">·</span>
+        <kbd>↓</kbd> bannir les deux
+      </div>
     </main>
   );
 }
