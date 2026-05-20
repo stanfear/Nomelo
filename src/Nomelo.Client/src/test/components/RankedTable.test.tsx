@@ -5,7 +5,7 @@ import { fixtures } from "../handlers";
 
 test("renders ranked items in order with score rounding", () => {
   render(<RankedTable ranked={fixtures.RESULTS.ranked} banned={[]} />);
-  const rows = screen.getAllByRole("row").slice(1);
+  const rows = screen.getAllByRole("row");
   expect(within(rows[0]).getByText("Alice")).toBeInTheDocument();
   expect(within(rows[0]).getByText("1080")).toBeInTheDocument();
   expect(within(rows[1]).getByText("Carol")).toBeInTheDocument();

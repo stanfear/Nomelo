@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLists, useCreateSession } from "../api/hooks";
+import "../styles/pages.css";
 
 interface Props { onClose: () => void; }
 
@@ -26,33 +27,57 @@ export function NewSessionDialog({ onClose }: Props) {
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <form role="dialog" className="dialog" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
-        <h2>Nouvelle session</h2>
-        <label>
+      <form
+        role="dialog"
+        aria-labelledby="dialog-title"
+        className="dialog"
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="dialog-title" className="dialog__title">Nouvelle session</h2>
+
+        <label className="dialog__field">
           Liste
-          <select value={listId} onChange={(e) => setListId(e.target.value)} required>
+          <select
+            value={listId}
+            onChange={(e) => setListId(e.target.value)}
+            required
+          >
             <option value="">— choisir —</option>
             {lists?.map((l) => (
               <option key={l.id} value={l.id}>{l.name} ({l.itemCount})</option>
             ))}
           </select>
         </label>
-        <label>
+
+        <label className="dialog__field">
           Seuil de confiance
           <input
-            type="number" min={1} max={10}
+            type="number"
+            min={1}
+            max={10}
             value={threshold}
             onChange={(e) => setThreshold(Number(e.target.value))}
           />
         </label>
+
         {create.isError && (
           <p role="alert" className="dialog__error">
             {create.error instanceof Error ? create.error.message : "Erreur lors de la création"}
           </p>
         )}
+
         <div className="dialog__actions">
-          <button type="button" onClick={onClose}>Annuler</button>
-          <button type="submit" disabled={!listId || create.isPending}>Démarrer</button>
+          <button type="button" className="btn-ghost" onClick={onClose}>
+            Annuler
+          </button>
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={!listId || create.isPending}
+          >
+            Démarrer
+          </button>
         </div>
       </form>
     </div>
