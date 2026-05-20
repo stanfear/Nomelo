@@ -147,10 +147,21 @@
 /* A circle expands from the click point (or card center for keyboard
    shortcuts and "both" actions). The fill is a side-tinted highlight that
    contrasts with the underlying gradient by roughly the same magnitude as the
-   gradient's own range, producing a Material-style ink ripple. */
+   gradient's own range, producing a Material-style ink ripple.
+
+   The ripple lives inside an inset:0 clipping wrapper so the expanding circle
+   is bound to the card's layout box. We can't put overflow:hidden on the card
+   itself: the gradient pseudo (::before) needs to overflow on hover. */
+.name-card__ripple-clip {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .name-card__ripple {
   position: absolute;
-  z-index: 0;
   width: 80px;
   height: 80px;
   margin-left: -40px;

@@ -48,12 +48,13 @@ export function NameCard({ item, side, onPrefer, onBan, disabled, ripple }: Prop
   return (
     <section className="name-card" data-side={side} ref={sectionRef}>
       {ripple && (
-        <span
-          key={ripple.key}
-          className="name-card__ripple"
-          style={{ left: `${rippleX}px`, top: `${rippleY}px` }}
-          aria-hidden="true"
-        />
+        <span className="name-card__ripple-clip" aria-hidden="true">
+          <span
+            key={ripple.key}
+            className="name-card__ripple"
+            style={{ left: `${rippleX}px`, top: `${rippleY}px` }}
+          />
+        </span>
       )}
       <button
         type="button"
