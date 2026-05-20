@@ -1,5 +1,12 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
+// Aspire launches project resources with the AppHost's CWD, not the project's
+// own folder. The server's Lists:Directory default ("./lists" in Dev) would
+// therefore resolve to the AppHost dir, not the repo root. Anchor it to an
+// absolute path pointing at the repo-root lists/ folder.
+var listsDirectory = Path.GetFullPath(
+    Path.Combine(builder.AppHostDirectory, "..", "..", "lists"));
+
 // Postgres. Aspire publishes ConnectionStrings__<dbName> to consumers, so
 // naming the database resource "default" surfaces as ConnectionStrings:Default
 // in the Nomelo.Server configuration (the existing Program.cs reads "Default").
@@ -73,6 +80,7 @@ var server = builder
     .WaitFor(db)
     .WaitFor(tinyauth)
     .WaitFor(authProxy)
+    .WithEnvironment("Lists__Directory", listsDirectory)
     .WithEnvironment("OIDC__Authority", "https://nomelo.localhost:8443")
     .WithEnvironment("OIDC__ClientId", "nomelo")
     .WithEnvironment("OIDC__ClientSecret", tinyauthClientSecret);
