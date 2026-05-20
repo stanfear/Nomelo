@@ -52,6 +52,20 @@ public static class AuthExtensions
                 opt.Scope.Add("email");
                 opt.CallbackPath = "/signin-oidc";
                 opt.SignedOutCallbackPath = "/signout-callback-oidc";
+
+                // In Development the IdP runs behind YARP with the .NET dev cert,
+                // whose SAN is only "localhost" — not "nomelo.localhost" (the
+                // hostname TinyAuth requires as APPURL). The backchannel HTTP
+                // client therefore trips RemoteCertificateNameMismatch. Skip
+                // chain validation only in Dev; production never executes this
+                // branch.
+                if (env.IsDevelopment())
+                {
+                    opt.BackchannelHttpHandler = new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+                    };
+                }
             });
 
         services.AddAuthorization();
