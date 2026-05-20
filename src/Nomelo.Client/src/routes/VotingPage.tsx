@@ -14,6 +14,25 @@ const SHORTCUTS: Record<string, VoteResult> = {
   ArrowDown: "ban_both",
 };
 
+function ArrowKey({ rotation }: { rotation: number }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ transform: `rotate(${rotation}deg)` }}
+      aria-hidden="true"
+    >
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  );
+}
+
 export function VotingPage() {
   const { id = "" } = useParams();
   const pair = useNextPair(id);
@@ -120,13 +139,13 @@ export function VotingPage() {
       </footer>
 
       <div className="voting__shortcuts" aria-hidden="true">
-        <kbd>←</kbd> préférer
+        <kbd><ArrowKey rotation={180} /></kbd> préférer
         <span className="voting__shortcuts-sep">·</span>
-        <kbd>→</kbd> préférer
+        <kbd><ArrowKey rotation={0} /></kbd> préférer
         <span className="voting__shortcuts-sep">·</span>
-        <kbd>↑</kbd> j'aime les deux
+        <kbd><ArrowKey rotation={-90} /></kbd> j'aime les deux
         <span className="voting__shortcuts-sep">·</span>
-        <kbd>↓</kbd> bannir les deux
+        <kbd><ArrowKey rotation={90} /></kbd> bannir les deux
       </div>
     </main>
   );
