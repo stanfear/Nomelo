@@ -2,11 +2,11 @@
 
 Self-hosted name-selection web app. Users vote on pairs of names via repeated comparisons; an ELO-based algorithm surfaces the best names over time.
 
-Stack: ASP.NET Core 8 (Minimal APIs) · React 18 + Vite · PostgreSQL 16 · OIDC (Rauthy in dev / Authentik in prod) · .NET Aspire (local orchestration).
+Stack: ASP.NET Core 8 (Minimal APIs) · React 18 + Vite · PostgreSQL 16 · OIDC (TinyAuth in dev / Authentik in prod) · .NET Aspire (local orchestration).
 
 ## Local development
 
-The fastest way to run Nomelo locally is via the Aspire AppHost. It orchestrates Postgres, Rauthy (OIDC), the ASP.NET server, and the React dev server in one command, with a dashboard for logs, traces, and metrics.
+The fastest way to run Nomelo locally is via the Aspire AppHost. It orchestrates Postgres, TinyAuth (OIDC) fronted by a YARP HTTPS proxy, the ASP.NET server, and the React dev server in one command, with a dashboard for logs, traces, and metrics.
 
 ### Prerequisites
 
@@ -22,19 +22,31 @@ Set dev secrets in `src/Nomelo.AppHost/appsettings.Development.json`:
 ```json
 {
   "Parameters": {
-    "rauthy-admin-password": "ChangeMeInDev_Rauthy123!",
-    "rauthy-nomelo-client-secret": "dev-only-client-secret-change-me"
+    "tinyauth-admin-users": "admin:$2y$05$nbQgAO4QQraEWF.P1kKTyuIusK8lESJ.WhCwhrCysqWiDzKdK.FBu",
+    "tinyauth-nomelo-client-secret": "dev-nomelo-client-secret-change-me"
   }
 }
 ```
 
-Allow Aspire to use plain-HTTP transport (Rauthy is unencrypted locally):
+The `tinyauth-admin-users` value is in TinyAuth's `username:bcrypt-hash` format. The hash above is for the password `admin`.
+
+Allow Aspire to use plain-HTTP transport (used by the internal TinyAuth and server endpoints):
 
 ```powershell
 $env:ASPIRE_ALLOW_UNSECURED_TRANSPORT = "true"
 ```
 
 (Linux/macOS: `export ASPIRE_ALLOW_UNSECURED_TRANSPORT=true`.)
+
+### TLS dev certificate
+
+YARP fronts TinyAuth with HTTPS using the .NET dev certificate. If you've never trusted it on this machine, run once:
+
+```
+dotnet dev-certs https --trust
+```
+
+(You may be prompted to accept the certificate.)
 
 ### Run
 
@@ -45,23 +57,14 @@ dotnet run src/Nomelo.AppHost/apphost.cs
 The Aspire dashboard opens at the URL shown in the console (typically `https://localhost:17xxx`). Resources should turn green within a minute:
 
 - `postgres` — PostgreSQL 16 with persisted volume `nomelo-pgdata`
-- `rauthy` — OIDC provider at `http://localhost:8081`
+- `tinyauth` — OIDC provider, reachable only inside the Aspire network
+- `auth-proxy` — YARP HTTPS terminator in front of TinyAuth at `https://nomelo.localhost:8443`
 - `server` — ASP.NET API at `http://localhost:5000`
-- `client` — Vite dev server at `http://localhost:5173`
+- `client` — Vite dev server (port shown in the dashboard)
 
-### First-boot Rauthy setup (one-time)
+The OIDC discovery document is at `https://nomelo.localhost:8443/.well-known/openid-configuration`. The nomelo client is pre-declared via env vars on the TinyAuth resource; no manual provider setup is needed.
 
-After the first boot:
-
-1. Open `http://localhost:8081` and log in as `admin@nomelo.local` with the password set above.
-2. Create an OIDC client:
-   - **Client ID:** `nomelo`
-   - **Type:** Confidential
-   - **Allowed Redirect URIs:** `http://localhost:5173/signin-oidc`, `http://localhost:5000/signin-oidc`
-   - **Allowed Origins:** `http://localhost:5173`, `http://localhost:5000`
-   - **Secret:** the value of `rauthy-nomelo-client-secret` from step above
-   - **Allowed scopes:** `openid`, `profile`, `email`
-3. Open `http://localhost:5173/` to use the app. You'll be redirected to Rauthy, then back.
+Default login: `admin` / `admin` (change `tinyauth-admin-users` to override).
 
 ### Running tests
 

@@ -32,7 +32,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("database");
 
-builder.Services.AddNomeloAuth(builder.Configuration);
+builder.Services.AddNomeloAuth(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 

@@ -1,6 +1,7 @@
 #:sdk Aspire.AppHost.Sdk@13.3.3
 #:package Aspire.Hosting.AppHost@13.3.3
 #:package Aspire.Hosting.PostgreSQL@9.5.0
+#:package Aspire.Hosting.Yarp@13.*
 #:package CommunityToolkit.Aspire.Hosting.NodeJS.Extensions@9.9.0
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -15,45 +16,77 @@ var postgres = builder
 
 var db = postgres.AddDatabase("default", databaseName: "nomelo");
 
-// Rauthy. Self-hosted OIDC provider, default container port is 8080. We
-// expose it on host port 8081 and advertise that as PUB_URL so the issued
-// tokens carry the correct issuer URL for the server to validate against.
-// HQL_INSECURE_COOKIE allows http cookies in dev (production must use TLS).
-var rauthyAdminPassword = builder.AddParameter("rauthy-admin-password", secret: true);
-var rauthyClientSecret = builder.AddParameter("rauthy-nomelo-client-secret", secret: true);
+// TinyAuth — minimal self-hosted OIDC. Generates its own RSA keys on first boot
+// (stored on the volume). We pre-declare the nomelo client via env vars and a
+// single admin user for local login. TINYAUTH_AUTH_SECURECOOKIE=false is
+// required because TinyAuth itself runs over plain HTTP locally (YARP fronts
+// it with HTTPS, see the auth-proxy resource below).
+var tinyauthAdminUsers = builder.AddParameter("tinyauth-admin-users", secret: true);
+var tinyauthClientSecret = builder.AddParameter("tinyauth-nomelo-client-secret", secret: true);
 
-var rauthy = builder
-    .AddContainer("rauthy", "ghcr.io/sebadob/rauthy", "latest")
-    .WithHttpEndpoint(port: 8081, targetPort: 8080, name: "http")
-    .WithEnvironment("PUB_URL", "localhost:8081")
-    .WithEnvironment("LISTEN_SCHEME", "http")
-    .WithEnvironment("LISTEN_PORT_HTTP", "8080")
-    .WithEnvironment("BOOTSTRAP_ADMIN_EMAIL", "admin@nomelo.local")
-    .WithEnvironment("BOOTSTRAP_ADMIN_PASSWORD_PLAIN", rauthyAdminPassword)
-    .WithEnvironment("HQL_INSECURE_COOKIE", "true")
-    .WithVolume("nomelo-rauthy-data", "/app/data");
+// TinyAuth v5 hard-requires an HTTPS issuer URL (TINYAUTH_APPURL). Rather than
+// terminate TLS inside the TinyAuth container, we expose TinyAuth only on its
+// internal targetPort (no host port) and let the auth-proxy YARP resource
+// terminate TLS in front of it using the .NET dev cert. The issuer baked into
+// tokens is then the YARP-fronted URL, which the server validates against.
+//
+// We use nomelo.localhost (RFC 6761) rather than bare "localhost" because
+// TinyAuth rejects bare "localhost" as APPURL (must be at least a
+// second-level domain).
+var tinyauth = builder
+    .AddContainer("tinyauth", "ghcr.io/steveiliop56/tinyauth", "v5")
+    .WithHttpEndpoint(targetPort: 3000, name: "http")
+    .WithEnvironment("TINYAUTH_APPURL", "https://nomelo.localhost:8443")
+    .WithEnvironment("TINYAUTH_AUTH_USERS", tinyauthAdminUsers)
+    .WithEnvironment("TINYAUTH_AUTH_SECURECOOKIE", "false")
+    .WithEnvironment("TINYAUTH_OIDC_PRIVATEKEYPATH", "/data/private.key")
+    .WithEnvironment("TINYAUTH_OIDC_PUBLICKEYPATH", "/data/public.key")
+    .WithEnvironment("TINYAUTH_DATABASE_PATH", "/data/tinyauth.db")
+    .WithEnvironment("TINYAUTH_OIDC_CLIENTS_NOMELO_CLIENTID", "nomelo")
+    .WithEnvironment("TINYAUTH_OIDC_CLIENTS_NOMELO_CLIENTSECRET", tinyauthClientSecret)
+    .WithEnvironment("TINYAUTH_OIDC_CLIENTS_NOMELO_NAME", "nomelo")
+    .WithEnvironment(
+        "TINYAUTH_OIDC_CLIENTS_NOMELO_TRUSTEDREDIRECTURIS",
+        "http://localhost:5000/signin-oidc,http://localhost:5173/signin-oidc")
+    .WithVolume("nomelo-tinyauth-data", "/data");
 
-var rauthyEndpoint = rauthy.GetEndpoint("http");
+// YARP — TLS terminator for TinyAuth. TinyAuth requires an HTTPS issuer URL;
+// running it behind YARP lets us terminate TLS at the proxy with the .NET dev
+// cert while TinyAuth itself stays plain HTTP inside the network. The host
+// HTTPS port is pinned to 8443 so the OIDC issuer URL is stable across boots.
+#pragma warning disable ASPIRECERTIFICATES001 // WithHttpsDeveloperCertificate is experimental in Aspire 13.x
+var authProxy = builder.AddYarp("auth-proxy")
+    .WithHostHttpsPort(8443)
+    .WithHttpsDeveloperCertificate()
+    .WithConfiguration(yarp =>
+    {
+        yarp.AddRoute("/{**catch-all}", tinyauth.GetEndpoint("http"));
+    });
+#pragma warning restore ASPIRECERTIFICATES001
 
 // Nomelo backend (existing ASP.NET project, referenced by csproj path).
 // Single-file AppHost uses the string-path overload of AddProject rather than
 // the Projects.<Type> overload used by csproj-based AppHosts.
+// OIDC__Authority points at the YARP-fronted HTTPS URL, which matches the
+// issuer TinyAuth bakes into the tokens (TINYAUTH_APPURL above).
 var server = builder
     .AddProject("server", "../Nomelo.Server/Nomelo.Server.csproj")
     .WithReference(db)
     .WaitFor(db)
-    .WaitFor(rauthy)
-    .WithEnvironment("OIDC__Authority", $"{rauthyEndpoint.Url}/auth/v1")
+    .WaitFor(tinyauth)
+    .WaitFor(authProxy)
+    .WithEnvironment("OIDC__Authority", "https://nomelo.localhost:8443")
     .WithEnvironment("OIDC__ClientId", "nomelo")
-    .WithEnvironment("OIDC__ClientSecret", rauthyClientSecret);
+    .WithEnvironment("OIDC__ClientSecret", tinyauthClientSecret);
 
-// React (Vite) client. AddViteApp runs `npm run dev` in the working dir and
-// wires VITE_PORT for the proxy. Service discovery passes the server URL via
-// services__server__http__0, which vite.config.ts can pick up in a later pass.
+// React (Vite) client. AddViteApp runs `npm run dev` in the working dir.
+// The Vite dev server listens internally on the port from vite.config.ts (5173);
+// Aspire proxies it through a dynamically allocated host port shown in the
+// dashboard. Service discovery passes the server URL via services__server__http__0,
+// which vite.config.ts can be updated to pick up in a later pass.
 var client = builder
     .AddViteApp("client", workingDirectory: "../Nomelo.Client", packageManager: "npm")
     .WithReference(server)
-    .WaitFor(server)
-    .WithHttpEndpoint(port: 5173, targetPort: 5173, env: "VITE_PORT");
+    .WaitFor(server);
 
 builder.Build().Run();
