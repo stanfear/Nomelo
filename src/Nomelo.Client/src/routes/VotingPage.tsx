@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useNextPair, useSession, useSubmitVote } from "../api/hooks";
-import { NameCard } from "../components/NameCard";
+import { NameCard, type RippleSource } from "../components/NameCard";
 import { StabilityBanner } from "../components/StabilityBanner";
 import { OrientationHint } from "../components/OrientationHint";
 import type { VoteResult } from "../api/types";
@@ -47,25 +47,39 @@ export function VotingPage() {
   const session = useSession(id);
   const submit = useSubmitVote(id);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [flash, setFlash] = useState<FlashSide | null>(null);
+  const [rippleA, setRippleA] = useState<RippleSource | undefined>(undefined);
+  const [rippleB, setRippleB] = useState<RippleSource | undefined>(undefined);
+  const rippleSeq = useRef(0);
 
-  const send = (result: VoteResult) => {
+  const send = (result: VoteResult, source?: RippleSource) => {
     if (!pair.data) return;
-    setFlash(sideForResult(result));
+    const side = sideForResult(result);
+    const key = ++rippleSeq.current;
+    // For one-side actions we use the event's coordinates when available;
+    // otherwise (keyboard / footer button) we let NameCard fall back to its
+    // own center so the ripple still feels anchored to the affected card.
+    if (side === "A") {
+      setRippleA({ ...(source ?? {}), key });
+    } else if (side === "B") {
+      setRippleB({ ...(source ?? {}), key });
+    } else {
+      setRippleA({ key });
+      setRippleB({ key });
+    }
     submit.mutate({ itemA: pair.data.a.value, itemB: pair.data.b.value, result });
   };
 
   const sending = submit.isPending || pair.isFetching;
 
-  // Clear the flash once a new pair arrives so the next click starts fresh.
+  // Clear ripples once the new pair arrives so the animation can re-fire next click.
   useEffect(() => {
-    setFlash(null);
+    setRippleA(undefined);
+    setRippleB(undefined);
   }, [pair.data]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (sending || !pair.data) return;
-      // Don't interfere when the user is typing in a form control.
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
@@ -116,21 +130,23 @@ export function VotingPage() {
         <StabilityBanner onDismiss={() => setBannerDismissed(true)} />
       )}
 
-      <section className="voting__pair" key={pairKey} data-flash={flash ?? undefined}>
+      <section className="voting__pair" key={pairKey}>
         <NameCard
           item={pair.data.a}
           side="A"
-          onPrefer={() => send("prefer_a")}
-          onBan={() => send("ban_a")}
+          onPrefer={(src) => send("prefer_a", src)}
+          onBan={(src) => send("ban_a", src)}
           disabled={sending}
+          ripple={rippleA}
         />
         <div className="voting__or" aria-hidden="true">ou</div>
         <NameCard
           item={pair.data.b}
           side="B"
-          onPrefer={() => send("prefer_b")}
-          onBan={() => send("ban_b")}
+          onPrefer={(src) => send("prefer_b", src)}
+          onBan={(src) => send("ban_b", src)}
           disabled={sending}
+          ripple={rippleB}
         />
       </section>
 
