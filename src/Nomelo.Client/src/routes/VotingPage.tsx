@@ -4,8 +4,10 @@ import { useNextPair, useSession, useSubmitVote } from "../api/hooks";
 import { NameCard, type RippleSource } from "../components/NameCard";
 import { StabilityBanner } from "../components/StabilityBanner";
 import { OrientationHint } from "../components/OrientationHint";
-import type { VoteResult } from "../api/types";
+import type { PairDto, VoteResult } from "../api/types";
 import "../styles/voting.css";
+
+const RIPPLE_HOLD_MS = 700;
 
 const SHORTCUTS: Record<string, VoteResult> = {
   ArrowLeft: "prefer_a",
@@ -50,14 +52,15 @@ export function VotingPage() {
   const [rippleA, setRippleA] = useState<RippleSource | undefined>(undefined);
   const [rippleB, setRippleB] = useState<RippleSource | undefined>(undefined);
   const rippleSeq = useRef(0);
+  // Freeze the displayed pair locally while the ripple plays so the new pair
+  // can't pop in before the user gets to see the animation. Cleared once both
+  // the mutation has settled and at least RIPPLE_HOLD_MS have elapsed.
+  const [frozenPair, setFrozenPair] = useState<PairDto | null>(null);
 
   const send = (result: VoteResult, source?: RippleSource) => {
     if (!pair.data) return;
     const side = sideForResult(result);
     const key = ++rippleSeq.current;
-    // For one-side actions we use the event's coordinates when available;
-    // otherwise (keyboard / footer button) we let NameCard fall back to its
-    // own center so the ripple still feels anchored to the affected card.
     if (side === "A") {
       setRippleA({ ...(source ?? {}), key });
     } else if (side === "B") {
@@ -66,16 +69,28 @@ export function VotingPage() {
       setRippleA({ key });
       setRippleB({ key });
     }
-    submit.mutate({ itemA: pair.data.a.value, itemB: pair.data.b.value, result });
+    setFrozenPair(pair.data);
+    const startedAt = Date.now();
+    submit.mutate(
+      { itemA: pair.data.a.value, itemB: pair.data.b.value, result },
+      {
+        onSettled: () => {
+          const remaining = Math.max(0, RIPPLE_HOLD_MS - (Date.now() - startedAt));
+          window.setTimeout(() => setFrozenPair(null), remaining);
+        },
+      },
+    );
   };
 
-  const sending = submit.isPending || pair.isFetching;
+  const sending = submit.isPending || pair.isFetching || !!frozenPair;
+  const visiblePair = frozenPair ?? pair.data ?? null;
 
-  // Clear ripples once the new pair arrives so the animation can re-fire next click.
+  // Clear ripples when the actually-visible pair changes (after the freeze
+  // releases), so each new pair starts ripple-free.
   useEffect(() => {
     setRippleA(undefined);
     setRippleB(undefined);
-  }, [pair.data]);
+  }, [visiblePair]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -93,9 +108,9 @@ export function VotingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pair.data, sending]);
 
-  if (pair.isLoading) return <p>Chargement…</p>;
+  if (pair.isLoading && !visiblePair) return <p>Chargement…</p>;
 
-  if (!pair.data) {
+  if (!visiblePair) {
     return (
       <main className="voting">
         <header className="voting__header">
@@ -111,7 +126,7 @@ export function VotingPage() {
   }
 
   const voteCount = session.data?.voteCount ?? 0;
-  const pairKey = `${pair.data.a.value}__${pair.data.b.value}`;
+  const pairKey = `${visiblePair.a.value}__${visiblePair.b.value}`;
 
   return (
     <main className="voting">
@@ -132,7 +147,7 @@ export function VotingPage() {
 
       <section className="voting__pair" key={pairKey}>
         <NameCard
-          item={pair.data.a}
+          item={visiblePair.a}
           side="A"
           onPrefer={(src) => send("prefer_a", src)}
           onBan={(src) => send("ban_a", src)}
@@ -141,7 +156,7 @@ export function VotingPage() {
         />
         <div className="voting__or" aria-hidden="true">ou</div>
         <NameCard
-          item={pair.data.b}
+          item={visiblePair.b}
           side="B"
           onPrefer={(src) => send("prefer_b", src)}
           onBan={(src) => send("ban_b", src)}
