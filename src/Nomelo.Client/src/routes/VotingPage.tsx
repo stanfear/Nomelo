@@ -14,6 +14,14 @@ const SHORTCUTS: Record<string, VoteResult> = {
   ArrowDown: "ban_both",
 };
 
+type FlashSide = "A" | "B" | "both";
+
+const sideForResult = (r: VoteResult): FlashSide => {
+  if (r === "prefer_a" || r === "ban_a") return "A";
+  if (r === "prefer_b" || r === "ban_b") return "B";
+  return "both";
+};
+
 function ArrowKey({ rotation }: { rotation: number }) {
   return (
     <svg
@@ -39,13 +47,20 @@ export function VotingPage() {
   const session = useSession(id);
   const submit = useSubmitVote(id);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [flash, setFlash] = useState<FlashSide | null>(null);
 
   const send = (result: VoteResult) => {
     if (!pair.data) return;
+    setFlash(sideForResult(result));
     submit.mutate({ itemA: pair.data.a.value, itemB: pair.data.b.value, result });
   };
 
   const sending = submit.isPending || pair.isFetching;
+
+  // Clear the flash once a new pair arrives so the next click starts fresh.
+  useEffect(() => {
+    setFlash(null);
+  }, [pair.data]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -101,7 +116,7 @@ export function VotingPage() {
         <StabilityBanner onDismiss={() => setBannerDismissed(true)} />
       )}
 
-      <section className="voting__pair" key={pairKey}>
+      <section className="voting__pair" key={pairKey} data-flash={flash ?? undefined}>
         <NameCard
           item={pair.data.a}
           side="A"

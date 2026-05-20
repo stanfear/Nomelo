@@ -143,6 +143,29 @@
 .name-card:hover  { filter: brightness(1.06) saturate(1.05); z-index: 2; }
 .name-card:active { filter: brightness(0.95) saturate(1.05); z-index: 2; }
 
+/* ---------- Click/keypress flash feedback ---------- */
+@keyframes flashPulseX {
+  0%   { transform: scaleX(1);    filter: brightness(1)   saturate(1); }
+  40%  { transform: scaleX(1.08); filter: brightness(1.4) saturate(1.6); }
+  100% { transform: scaleX(1);    filter: brightness(1)   saturate(1); }
+}
+
+.voting__pair[data-flash="A"] .name-card[data-side="A"]::before,
+.voting__pair[data-flash="B"] .name-card[data-side="B"]::before,
+.voting__pair[data-flash="both"] .name-card::before {
+  animation: flashPulseX 320ms var(--easing-out);
+}
+
+.voting__pair[data-flash] .name-card[data-side="A"],
+.voting__pair[data-flash] .name-card[data-side="B"] {
+  z-index: auto;
+}
+.voting__pair[data-flash="A"] .name-card[data-side="A"],
+.voting__pair[data-flash="B"] .name-card[data-side="B"],
+.voting__pair[data-flash="both"] .name-card {
+  z-index: 3;
+}
+
 /* Fullface invisible button covering the whole side (captures primary click) */
 .name-card__prefer-fullface {
   position: absolute;
@@ -387,6 +410,17 @@
   .name-card[data-side="B"]::before { transform-origin: center bottom; }
   .name-card:hover::before  { transform: scaleY(1.02); }
   .name-card:active::before { transform: scaleY(0.99); }
+
+  @keyframes flashPulseY {
+    0%   { transform: scaleY(1);    filter: brightness(1)   saturate(1); }
+    40%  { transform: scaleY(1.08); filter: brightness(1.4) saturate(1.6); }
+    100% { transform: scaleY(1);    filter: brightness(1)   saturate(1); }
+  }
+  .voting__pair[data-flash="A"] .name-card[data-side="A"]::before,
+  .voting__pair[data-flash="B"] .name-card[data-side="B"]::before,
+  .voting__pair[data-flash="both"] .name-card::before {
+    animation-name: flashPulseY;
+  }
 }
 
 @media (orientation: landscape) { .orientation-hint { display: none; } }
