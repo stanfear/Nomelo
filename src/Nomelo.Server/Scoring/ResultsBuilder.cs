@@ -21,9 +21,14 @@ public static class ResultsBuilder
             };
         }).ToList();
 
+        // Sort by rounded ELO descending so tied items group together, then by
+        // times-shown descending so the most-presented item leads its tie
+        // group, then by actual ELO as the final tiebreaker.
         var sorted = items
             .Where(x => !x.Banned)
-            .OrderByDescending(x => x.Elo)
+            .OrderByDescending(x => Math.Round(x.Elo))
+            .ThenByDescending(x => x.Shown)
+            .ThenByDescending(x => x.Elo)
             .ToList();
 
         // Standard "competition" ranking (1224): tied items share the lower

@@ -639,6 +639,42 @@
   border: 1px solid rgba(214, 139, 72, 0.35);
 }
 
+/* Tied continuation row: indented child under the rank-group leader. */
+.ranked__row[data-tied="continuation"] {
+  margin-left: 1.75rem;
+  background: transparent;
+  border-color: transparent;
+}
+.ranked__row[data-tied="continuation"]:hover {
+  background: var(--surface-card-hover);
+}
+.ranked__row[data-tied="continuation"] .ranked__rank {
+  background: transparent;
+  box-shadow: none;
+  position: relative;
+}
+.ranked__row[data-tied="continuation"] .ranked__rank::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -50%;
+  bottom: 50%;
+  width: 0;
+  border-left: 2px solid var(--border-default);
+  transform: translateX(-1px);
+}
+.ranked__row[data-tied="continuation"] .ranked__rank::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 0;
+  border-top: 2px solid var(--border-default);
+  border-bottom-left-radius: 6px;
+  transform: translateY(-1px);
+}
+
 .ranked__rank {
   display: grid;
   place-items: center;

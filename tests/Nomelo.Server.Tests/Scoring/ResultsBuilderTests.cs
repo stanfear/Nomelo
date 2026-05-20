@@ -96,4 +96,23 @@ public class ResultsBuilderTests
 
         ranked.Select(r => r.Rank).Should().Equal(1, 1, 1, 4);
     }
+
+    [Fact]
+    public void Tied_items_ordered_by_times_shown_descending()
+    {
+        // Three items tied on ELO. They should be listed most-shown first so
+        // the rank-group leader is the best-tested entry.
+        var list = List("a", "b", "c");
+        var states = new Dictionary<string, (double, int, bool)>
+        {
+            ["a"] = (1000, 2, false),
+            ["b"] = (1000, 8, false),
+            ["c"] = (1000, 5, false),
+        };
+
+        var (ranked, _) = ResultsBuilder.Build(list, states);
+
+        ranked.Select(r => r.Value).Should().Equal("b", "c", "a");
+        ranked.Select(r => r.Rank).Should().Equal(1, 1, 1);
+    }
 }
