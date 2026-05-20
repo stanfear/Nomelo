@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLists, useCreateSession } from "../api/hooks";
 import { SelectField } from "../components/SelectField";
+import { NumberField } from "../components/NumberField";
 import "../styles/pages.css";
 
 interface Props { onClose: () => void; }
@@ -48,16 +49,13 @@ export function NewSessionDialog({ onClose }: Props) {
           }))}
         />
 
-        <label className="dialog__field">
-          Seuil de confiance
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={threshold}
-            onChange={(e) => setThreshold(Number(e.target.value))}
-          />
-        </label>
+        <NumberField
+          label="Seuil de confiance"
+          value={threshold}
+          min={1}
+          max={10}
+          onChange={setThreshold}
+        />
 
         {create.isError && (
           <p role="alert" className="dialog__error">

@@ -379,6 +379,91 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ---------- Custom number field with themed steppers ---------- */
+.number-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.number-field__control {
+  display: flex;
+  align-items: stretch;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+}
+
+.number-field__control:focus-within {
+  border-color: var(--color-like);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.number-field__input {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  padding: 0.7rem 0.9rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  min-width: 0;
+}
+
+.number-field__input::-webkit-inner-spin-button,
+.number-field__input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.number-field__input { -moz-appearance: textfield; }
+
+.number-field__steppers {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.number-field__stepper {
+  flex: 1;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+
+.number-field__stepper:first-child {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.number-field__stepper:hover:not(:disabled) {
+  background: rgba(255, 212, 59, 0.12);
+  color: var(--color-like);
+}
+
+.number-field__stepper:active:not(:disabled) {
+  background: rgba(255, 212, 59, 0.2);
+}
+
+.number-field__stepper:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .dialog__error {
   color: #ff8787;
   background: rgba(250, 82, 82, 0.12);
