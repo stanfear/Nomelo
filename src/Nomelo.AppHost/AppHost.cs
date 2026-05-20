@@ -1,11 +1,10 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Aspire launches project resources with the AppHost's CWD, not the project's
-// own folder. The server's Lists:Directory default ("./lists" in Dev) would
-// therefore resolve to the AppHost dir, not the repo root. Anchor it to an
-// absolute path pointing at the repo-root lists/ folder.
+// Test name lists live inside the AppHost project so they're co-located with
+// the dev orchestration that consumes them. Production deployments mount their
+// own lists/ directory via docker-compose (see Plan 4).
 var listsDirectory = Path.GetFullPath(
-    Path.Combine(builder.AppHostDirectory, "..", "..", "lists"));
+    Path.Combine(builder.AppHostDirectory, "lists"));
 
 // Postgres. Aspire publishes ConnectionStrings__<dbName> to consumers, so
 // naming the database resource "default" surfaces as ConnectionStrings:Default
