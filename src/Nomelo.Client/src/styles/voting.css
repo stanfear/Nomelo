@@ -118,16 +118,19 @@
   background: linear-gradient(135deg, var(--color-b-from), var(--color-b-to));
 }
 
-/* z-index boost ensures the hovered card always wins stacking against its
-   sibling — without it, the later DOM sibling (B) always overlaps A, making
-   the scale appear asymmetric. */
+/* Anchor each card to its outer edge so a scaleX only moves the inward edge
+   (the central seam) toward the neighbor — top, bottom and outer edges stay
+   pinned. z-index boost keeps the hovered card on top of its sibling. */
+.name-card[data-side="A"] { transform-origin: left center; }
+.name-card[data-side="B"] { transform-origin: right center; }
+
 .name-card:hover {
-  transform: scale(1.015);
+  transform: scaleX(1.02);
   filter: brightness(1.06) saturate(1.05);
   z-index: 2;
 }
 .name-card:active {
-  transform: scale(0.995);
+  transform: scaleX(0.99);
   filter: brightness(0.95) saturate(1.05);
   z-index: 2;
 }
@@ -369,6 +372,12 @@
   /* Move ban buttons to a non-overlapping corner in portrait */
   .name-card[data-side="A"] .name-card__ban { left: auto; right: 1rem; bottom: 0.6rem; }
   .name-card[data-side="B"] .name-card__ban { right: 1rem; left: auto; bottom: 0.6rem; }
+
+  /* In portrait the seam is horizontal: scale only the Y axis from the outer edge. */
+  .name-card[data-side="A"] { transform-origin: center top; }
+  .name-card[data-side="B"] { transform-origin: center bottom; }
+  .name-card:hover  { transform: scaleY(1.02); }
+  .name-card:active { transform: scaleY(0.99); }
 }
 
 @media (orientation: landscape) { .orientation-hint { display: none; } }
