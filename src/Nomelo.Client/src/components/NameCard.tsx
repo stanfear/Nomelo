@@ -32,9 +32,6 @@ export function NameCard({ item, side, onPrefer, onBan, disabled }: Props) {
         {item.description && (
           <span className="name-card__description">{item.description}</span>
         )}
-        <span className="name-card__prefer-hint" aria-hidden="true">
-          Cliquer pour préférer
-        </span>
       </button>
 
       <button
