@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLists, useCreateSession } from "../api/hooks";
+import { SelectField } from "../components/SelectField";
 import "../styles/pages.css";
 
 interface Props { onClose: () => void; }
@@ -36,19 +37,16 @@ export function NewSessionDialog({ onClose }: Props) {
       >
         <h2 id="dialog-title" className="dialog__title">Nouvelle session</h2>
 
-        <label className="dialog__field">
-          Liste
-          <select
-            value={listId}
-            onChange={(e) => setListId(e.target.value)}
-            required
-          >
-            <option value="">— choisir —</option>
-            {lists?.map((l) => (
-              <option key={l.id} value={l.id}>{l.name} ({l.itemCount})</option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label="Liste"
+          value={listId}
+          onChange={setListId}
+          required
+          options={(lists ?? []).map((l) => ({
+            value: l.id,
+            label: `${l.name} (${l.itemCount})`,
+          }))}
+        />
 
         <label className="dialog__field">
           Seuil de confiance

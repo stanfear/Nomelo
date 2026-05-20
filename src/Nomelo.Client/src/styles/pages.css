@@ -259,6 +259,126 @@
 }
 .dialog__field select option { background: var(--surface-elevated); color: var(--text-primary); }
 
+/* Hide native number spinners — they render in OS chrome and clash with the dark theme. */
+.dialog__field input[type="number"]::-webkit-inner-spin-button,
+.dialog__field input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.dialog__field input[type="number"] { -moz-appearance: textfield; }
+
+/* ---------- Custom select (replaces native <select> for full theme control) ---------- */
+.select-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.select-field__label {
+  display: block;
+}
+
+.select-field__control {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  padding: 0.7rem 0.9rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+  text-align: left;
+}
+
+.select-field__control:focus-visible {
+  outline: none;
+  border-color: var(--color-like);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.select-field__control[aria-expanded="true"] {
+  border-color: var(--color-like);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.select-field__placeholder {
+  color: var(--text-muted);
+}
+
+.select-field__chevron {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: transform var(--duration-fast);
+}
+
+.select-field__control[aria-expanded="true"] .select-field__chevron {
+  transform: rotate(180deg);
+}
+
+.select-field__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  animation: dropdownIn 120ms var(--easing-out);
+}
+
+.select-field__option {
+  padding: 0.55rem 0.7rem;
+  border-radius: calc(var(--radius-md) - 4px);
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.select-field__option.is-highlighted {
+  background: rgba(255, 212, 59, 0.12);
+}
+
+.select-field__option.is-selected {
+  background: rgba(255, 212, 59, 0.18);
+  color: var(--color-like);
+}
+
+.select-field__option.is-selected.is-highlighted {
+  background: rgba(255, 212, 59, 0.28);
+}
+
+.select-field__empty {
+  padding: 0.55rem 0.7rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .dialog__error {
   color: #ff8787;
   background: rgba(250, 82, 82, 0.12);
