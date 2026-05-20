@@ -139,13 +139,13 @@ export function VotingPage() {
       </footer>
 
       <div className="voting__shortcuts" aria-hidden="true">
-        <kbd><ArrowKey rotation={180} /></kbd> préférer
+        <span className="voting__shortcut"><kbd><ArrowKey rotation={180} /></kbd> préférer</span>
         <span className="voting__shortcuts-sep">·</span>
-        <kbd><ArrowKey rotation={0} /></kbd> préférer
+        <span className="voting__shortcut"><kbd><ArrowKey rotation={0} /></kbd> préférer</span>
         <span className="voting__shortcuts-sep">·</span>
-        <kbd><ArrowKey rotation={-90} /></kbd> j'aime les deux
+        <span className="voting__shortcut"><kbd><ArrowKey rotation={-90} /></kbd> j'aime les deux</span>
         <span className="voting__shortcuts-sep">·</span>
-        <kbd><ArrowKey rotation={90} /></kbd> bannir les deux
+        <span className="voting__shortcut"><kbd><ArrowKey rotation={90} /></kbd> bannir les deux</span>
       </div>
     </main>
   );
