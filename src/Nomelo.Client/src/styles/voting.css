@@ -77,6 +77,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 0;
+  /* Clip the gradient pseudo when it scales past the outer edge. */
+  overflow: hidden;
 }
 
 /* "OU" centerpiece */
@@ -109,35 +111,37 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   isolation: isolate;
-  transition: transform var(--duration-fast) var(--easing-out),
-              filter var(--duration-fast) var(--easing-out);
+  transition: filter var(--duration-fast) var(--easing-out);
 }
 
-.name-card[data-side="A"] {
+/* Gradient background lives on a pseudo-element so we can scale it without
+   scaling the text (which would blur the glyphs via GPU rasterization). */
+.name-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transition: transform var(--duration-fast) var(--easing-out);
+  will-change: transform;
+}
+
+.name-card[data-side="A"]::before {
   background: linear-gradient(135deg, var(--color-a-from), var(--color-a-to));
+  transform-origin: left center;
 }
-.name-card[data-side="B"] {
+.name-card[data-side="B"]::before {
   background: linear-gradient(135deg, var(--color-b-from), var(--color-b-to));
+  transform-origin: right center;
 }
 
-/* Anchor each card to its outer edge so a scaleX only moves the inward edge
-   (the central seam) toward the neighbor — top, bottom and outer edges stay
-   pinned. z-index boost keeps the hovered card on top of its sibling. */
-.name-card[data-side="A"] { transform-origin: left center; }
-.name-card[data-side="B"] { transform-origin: right center; }
+/* Only the pseudo scales: the inward edge pushes toward the neighbor while
+   the text stays at its native dimensions and remains sharp. */
+.name-card:hover::before  { transform: scaleX(1.02); }
+.name-card:active::before { transform: scaleX(0.99); }
 
-.name-card:hover {
-  transform: scaleX(1.02);
-  filter: brightness(1.06) saturate(1.05);
-  z-index: 2;
-}
-.name-card:active {
-  transform: scaleX(0.99);
-  filter: brightness(0.95) saturate(1.05);
-  z-index: 2;
-}
+.name-card:hover  { filter: brightness(1.06) saturate(1.05); z-index: 2; }
+.name-card:active { filter: brightness(0.95) saturate(1.05); z-index: 2; }
 
 /* Fullface invisible button covering the whole side (captures primary click) */
 .name-card__prefer-fullface {
@@ -394,10 +398,10 @@
   .name-card[data-side="B"] .name-card__ban { right: 1rem; left: auto; bottom: 0.6rem; }
 
   /* In portrait the seam is horizontal: scale only the Y axis from the outer edge. */
-  .name-card[data-side="A"] { transform-origin: center top; }
-  .name-card[data-side="B"] { transform-origin: center bottom; }
-  .name-card:hover  { transform: scaleY(1.02); }
-  .name-card:active { transform: scaleY(0.99); }
+  .name-card[data-side="A"]::before { transform-origin: center top; }
+  .name-card[data-side="B"]::before { transform-origin: center bottom; }
+  .name-card:hover::before  { transform: scaleY(1.02); }
+  .name-card:active::before { transform: scaleY(0.99); }
 }
 
 @media (orientation: landscape) { .orientation-hint { display: none; } }
