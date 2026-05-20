@@ -21,12 +21,29 @@ public static class ResultsBuilder
             };
         }).ToList();
 
-        var ranked = items
+        var sorted = items
             .Where(x => !x.Banned)
             .OrderByDescending(x => x.Elo)
-            .Select((x, idx) => new RankedItemDto(
-                idx + 1, x.Item.Value, x.Item.Variants, x.Elo, x.Shown, false))
             .ToList();
+
+        // Standard "competition" ranking (1224): tied items share the lower
+        // rank, the next non-tied item's rank equals (count of items above) + 1.
+        // Tie key uses the rounded ELO so it matches what the UI displays.
+        var ranked = new List<RankedItemDto>(sorted.Count);
+        double? lastKey = null;
+        int currentRank = 0;
+        for (var i = 0; i < sorted.Count; i++)
+        {
+            var x = sorted[i];
+            var key = Math.Round(x.Elo);
+            if (lastKey is null || key != lastKey)
+            {
+                currentRank = i + 1;
+                lastKey = key;
+            }
+            ranked.Add(new RankedItemDto(
+                currentRank, x.Item.Value, x.Item.Variants, x.Elo, x.Shown, false));
+        }
 
         var banned = items
             .Where(x => x.Banned)
