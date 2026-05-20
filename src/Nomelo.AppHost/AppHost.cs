@@ -3,8 +3,12 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Postgres. Aspire publishes ConnectionStrings__<dbName> to consumers, so
 // naming the database resource "default" surfaces as ConnectionStrings:Default
 // in the Nomelo.Server configuration (the existing Program.cs reads "Default").
+// The admin password is pinned via a parameter so it stays stable across runs;
+// otherwise Aspire regenerates a random password each boot and the persistent
+// volume's password hash drifts, locking us out.
+var postgresPassword = builder.AddParameter("postgres-password", secret: true);
 var postgres = builder
-    .AddPostgres("postgres")
+    .AddPostgres("postgres", password: postgresPassword)
     .WithDataVolume("nomelo-pgdata")
     .WithPgAdmin();
 
