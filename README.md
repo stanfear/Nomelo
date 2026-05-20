@@ -51,7 +51,7 @@ dotnet dev-certs https --trust
 ### Run
 
 ```
-dotnet run src/Nomelo.AppHost/apphost.cs
+dotnet run --project src/Nomelo.AppHost
 ```
 
 The Aspire dashboard opens at the URL shown in the console (typically `https://localhost:17xxx`). Resources should turn green within a minute:

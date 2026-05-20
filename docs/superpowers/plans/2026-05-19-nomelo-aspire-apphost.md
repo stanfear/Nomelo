@@ -466,7 +466,7 @@ Aspire 13.3.3's `aspire-apphost-singlefile` template produces a file-based app (
 - No `dotnet sln add` step.
 - No `<ProjectReference>` in a csproj — use `builder.AddProject("server", "../Nomelo.Server/Nomelo.Server.csproj")`.
 - Packages declared via `#:package` directives at the top of `apphost.cs`.
-- Run with `dotnet run src/Nomelo.AppHost/apphost.cs` (the `--project` form fails with MSB4025).
+- Run with `dotnet run --project src/Nomelo.AppHost` (the `--project` form fails with MSB4025).
 - Set `ASPIRE_ALLOW_UNSECURED_TRANSPORT=true` since Rauthy runs over HTTP.
 
 Rauthy env vars verified against https://sebadob.github.io/rauthy/config/config.html — added `HQL_INSECURE_COOKIE=true` for HTTP cookies in dev; dropped `BOOTSTRAP_API_KEY_SECRET` (that flag is for the Rauthy admin API, not the OIDC client secret).
