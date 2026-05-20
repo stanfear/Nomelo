@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { PairItemDto } from "../api/types";
 
 interface Props {
@@ -10,8 +9,6 @@ interface Props {
 }
 
 export function NameCard({ item, side, onPrefer, onBan, disabled }: Props) {
-  const [showDesc, setShowDesc] = useState(false);
-
   const stop = (handler: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
     handler();
@@ -32,29 +29,13 @@ export function NameCard({ item, side, onPrefer, onBan, disabled }: Props) {
             {item.variants.join(" · ")}
           </span>
         )}
+        {item.description && (
+          <span className="name-card__description">{item.description}</span>
+        )}
         <span className="name-card__prefer-hint" aria-hidden="true">
           Cliquer pour préférer
         </span>
       </button>
-
-      {item.description && (
-        <>
-          <button
-            type="button"
-            className="name-card__info"
-            aria-expanded={showDesc}
-            aria-label={`Plus d'infos sur ${item.value}`}
-            onClick={stop(() => setShowDesc((v) => !v))}
-          >
-            i
-          </button>
-          {showDesc && (
-            <p className="name-card__description" role="note">
-              {item.description}
-            </p>
-          )}
-        </>
-      )}
 
       <button
         type="button"

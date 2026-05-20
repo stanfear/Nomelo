@@ -25,11 +25,14 @@ test("clicking Bannir fires onBan", async () => {
   expect(onBan).toHaveBeenCalledTimes(1);
 });
 
-test("description is hidden by default and shown on info toggle", async () => {
+test("description is shown inline when present", () => {
   render(<NameCard item={item} onPrefer={() => {}} onBan={() => {}} side="A" />);
-  expect(screen.queryByText(item.description)).not.toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: /Plus d'infos sur Alice/i }));
   expect(screen.getByText(item.description)).toBeInTheDocument();
+});
+
+test("no description rendered when null", () => {
+  render(<NameCard item={{ value: "Bob", variants: [], description: null }} onPrefer={() => {}} onBan={() => {}} side="B" />);
+  expect(screen.queryByText(/old-French/)).not.toBeInTheDocument();
 });
 
 test("no variants section when array is empty", () => {

@@ -209,31 +209,6 @@
   max-width: 80%;
 }
 
-/* Info icon (top-right of side) */
-.name-card__info {
-  position: absolute;
-  top: 0.9rem;
-  right: 0.9rem;
-  z-index: 5;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 0;
-  background: rgba(255, 255, 255, 0.22);
-  color: var(--color-text-on-bright);
-  font-weight: 800;
-  font-style: italic;
-  font-family: Georgia, serif;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition: background var(--duration-fast), transform var(--duration-fast);
-}
-.name-card__info:hover { background: rgba(255, 255, 255, 0.35); transform: scale(1.08); }
-
 /* Ban button (bottom corner of side) */
 .name-card__ban {
   position: absolute;
@@ -260,24 +235,17 @@
 .name-card__ban:hover { background: var(--color-ban); transform: translateY(-1px); }
 .name-card__ban:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Description popover */
+/* Description: serif text, permanently shown below variants when available */
 .name-card__description {
-  position: absolute;
-  top: 4rem;
-  right: 0.9rem;
-  left: 0.9rem;
-  z-index: 6;
-  margin: 0;
-  padding: 0.9rem 1rem;
-  background: var(--color-overlay);
-  color: var(--color-text-on-bright);
-  border-radius: var(--radius-md);
-  font-size: 0.95rem;
-  line-height: 1.4;
-  box-shadow: var(--shadow-pop);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: fadeIn var(--duration-fast) var(--easing-out);
+  margin: 0.25rem 0 0;
+  max-width: 32ch;
+  font-family: "Iowan Old Style", "Apple Garamond", Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(0.85rem, 1.3vw, 1.05rem);
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* ---------- Slide-in animation per side ---------- */
@@ -295,15 +263,17 @@
 }
 
 .name-card[data-side="A"] .name-card__value,
-.name-card[data-side="A"] .name-card__variants {
+.name-card[data-side="A"] .name-card__variants,
+.name-card[data-side="A"] .name-card__description {
   animation: slideInLeft var(--duration-slide) var(--easing-out) both;
 }
 .name-card[data-side="B"] .name-card__value,
-.name-card[data-side="B"] .name-card__variants {
+.name-card[data-side="B"] .name-card__variants,
+.name-card[data-side="B"] .name-card__description {
   animation: slideInRight var(--duration-slide) var(--easing-out) both;
 }
-.name-card[data-side="A"] .name-card__variants { animation-delay: 80ms; }
-.name-card[data-side="B"] .name-card__variants { animation-delay: 80ms; }
+.name-card__variants    { animation-delay: 80ms; }
+.name-card__description { animation-delay: 140ms; }
 
 @media (prefers-reduced-motion: reduce) {
   .name-card, .name-card *, .name-card__description { animation: none !important; transition: none !important; }
