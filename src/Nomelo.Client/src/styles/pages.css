@@ -318,7 +318,7 @@
 }
 
 .select-field__chevron {
-  font-size: 0.7rem;
+  flex-shrink: 0;
   color: var(--text-muted);
   transition: transform var(--duration-fast);
 }
