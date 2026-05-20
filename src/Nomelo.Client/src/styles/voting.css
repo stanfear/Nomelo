@@ -149,16 +149,23 @@
    contrasts with the underlying gradient by roughly the same magnitude as the
    gradient's own range, producing a Material-style ink ripple.
 
-   The ripple lives inside an inset:0 clipping wrapper so the expanding circle
-   is bound to the card's layout box. We can't put overflow:hidden on the card
-   itself: the gradient pseudo (::before) needs to overflow on hover. */
+   The ripple lives inside an inset:0 wrapper whose clip-path follows the same
+   inward expansion as the gradient pseudo (::before) on hover/active, so the
+   circle stays visible across the seam-extended area instead of being cut at
+   the layout box. We use clip-path (not overflow: hidden) so the clipped
+   region can extend beyond the wrapper without distorting the ripple. */
 .name-card__ripple-clip {
   position: absolute;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
   pointer-events: none;
+  clip-path: inset(0);
+  transition: clip-path var(--duration-fast) var(--easing-out);
 }
+.name-card[data-side="A"]:hover  .name-card__ripple-clip { clip-path: inset(0 -2% 0 0); }
+.name-card[data-side="B"]:hover  .name-card__ripple-clip { clip-path: inset(0 0 0 -2%); }
+.name-card[data-side="A"]:active .name-card__ripple-clip { clip-path: inset(0 1% 0 0); }
+.name-card[data-side="B"]:active .name-card__ripple-clip { clip-path: inset(0 0 0 1%); }
 
 .name-card__ripple {
   position: absolute;
