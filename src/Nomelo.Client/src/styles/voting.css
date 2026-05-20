@@ -118,10 +118,19 @@
   background: linear-gradient(135deg, var(--color-b-from), var(--color-b-to));
 }
 
-/* Hover/active feedback via brightness only — scaling the card distorts its
-   bounding box and the seam visibly shifts under the centered "OU" badge. */
-.name-card:hover { filter: brightness(1.06) saturate(1.05); }
-.name-card:active { filter: brightness(0.95); }
+/* z-index boost ensures the hovered card always wins stacking against its
+   sibling — without it, the later DOM sibling (B) always overlaps A, making
+   the scale appear asymmetric. */
+.name-card:hover {
+  transform: scale(1.015);
+  filter: brightness(1.06) saturate(1.05);
+  z-index: 2;
+}
+.name-card:active {
+  transform: scale(0.995);
+  filter: brightness(0.95) saturate(1.05);
+  z-index: 2;
+}
 
 /* Fullface invisible button covering the whole side (captures primary click) */
 .name-card__prefer-fullface {
