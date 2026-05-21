@@ -14,9 +14,6 @@ services:
       Lists__Directory: "/data/lists"
     volumes:
       - ./lists:/data/lists:ro
-      # Persist Data Protection keys so cookies/antiforgery tokens survive
-      # container recreation (otherwise users get logged out on every redeploy).
-      - dp-keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       db:
         condition: service_healthy
@@ -39,4 +36,3 @@ services:
 
 volumes:
   pgdata:
-  dp-keys:
