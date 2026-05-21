@@ -21,8 +21,8 @@ const ALICE: SessionDto = {
 const LIST: ListDto = { id: "a", name: "Liste A", itemCount: 12 };
 
 const PAIR: PairDto = {
-  a: { value: "Alice", variants: ["Alicia"], description: "prénom A" },
-  b: { value: "Bob", variants: [], description: null },
+  a: { value: "Alice", variants: ["Alicia"], description: "prénom A", sparkline: null, peakYear: null, peakCount: null },
+  b: { value: "Bob", variants: [], description: null, sparkline: null, peakYear: null, peakCount: null },
 };
 
 const RESULTS: ResultsDto = {
@@ -32,11 +32,11 @@ const RESULTS: ResultsDto = {
   voteCount: 7,
   stabilityReached: false,
   ranked: [
-    { rank: 1, value: "Alice", variants: ["Alicia"], eloScore: 1080, timesShown: 5, isBanned: false },
-    { rank: 2, value: "Carol", variants: [], eloScore: 990, timesShown: 4, isBanned: false },
+    { rank: 1, value: "Alice", variants: ["Alicia"], eloScore: 1080, timesShown: 5, isBanned: false, sparkline: null, peakYear: null, peakCount: null },
+    { rank: 2, value: "Carol", variants: [], eloScore: 990, timesShown: 4, isBanned: false, sparkline: null, peakYear: null, peakCount: null },
   ],
   banned: [
-    { rank: 0, value: "Bob", variants: [], eloScore: 1000, timesShown: 3, isBanned: true },
+    { rank: 0, value: "Bob", variants: [], eloScore: 1000, timesShown: 3, isBanned: true, sparkline: null, peakYear: null, peakCount: null },
   ],
 };
 

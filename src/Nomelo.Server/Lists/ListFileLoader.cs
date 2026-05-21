@@ -42,7 +42,13 @@ public class ListFileLoader
                 throw new ListFileException($"item missing 'value' in {path}");
             if (!seen.Add(i.Value))
                 throw new ListFileException($"duplicate value '{i.Value}' in {path}");
-            items.Add(new ListFileItem(i.Value, (IReadOnlyList<string>?)i.Variants ?? Array.Empty<string>(), i.Description));
+            items.Add(new ListFileItem(
+                i.Value,
+                (IReadOnlyList<string>?)i.Variants ?? Array.Empty<string>(),
+                i.Description,
+                i.Sparkline,
+                i.PeakYear,
+                i.PeakCount));
         }
 
         return new ListFile(raw.Id, raw.Name, items);
@@ -60,5 +66,8 @@ public class ListFileLoader
         public string? Value { get; set; }
         public List<string>? Variants { get; set; }
         public string? Description { get; set; }
+        public string? Sparkline { get; set; }
+        public int? PeakYear { get; set; }
+        public int? PeakCount { get; set; }
     }
 }

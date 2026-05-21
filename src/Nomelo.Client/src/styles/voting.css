@@ -455,3 +455,21 @@
   from { transform: translateY(40px);  opacity: 0; }
   to   { transform: translateY(0);     opacity: 1; }
 }
+
+.name-card__sparkline {
+  margin-top: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(1rem, 1.8vw, 1.5rem);
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+.name-card__peak {
+  margin-top: 0.15rem;
+  font-size: clamp(0.78rem, 1.1vw, 0.95rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.01em;
+}

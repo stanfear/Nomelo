@@ -72,6 +72,16 @@ export function NameCard({ item, side, onPrefer, onBan, disabled, ripple }: Prop
         {item.description && (
           <span className="name-card__description">{item.description}</span>
         )}
+        {item.sparkline && (
+          <span className="name-card__sparkline" aria-hidden="true">
+            {item.sparkline}
+          </span>
+        )}
+        {item.peakYear !== null && item.peakCount !== null && (
+          <span className="name-card__peak">
+            Pic en {item.peakYear} · {new Intl.NumberFormat("fr-FR").format(item.peakCount!)} naissances
+          </span>
+        )}
       </button>
 
       <button

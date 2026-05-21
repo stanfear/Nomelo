@@ -56,8 +56,8 @@ public class NextPairService(AppDbContext db, ListCache cache)
         var b = byValue[picked.B];
 
         return new PairDto(
-            new PairItemDto(a.Value, a.Variants, a.Description),
-            new PairItemDto(b.Value, b.Variants, b.Description));
+            new PairItemDto(a.Value, a.Variants, a.Description, a.Sparkline, a.PeakYear, a.PeakCount),
+            new PairItemDto(b.Value, b.Variants, b.Description, b.Sparkline, b.PeakYear, b.PeakCount));
     }
 
     // Cross-process-stable seed combining the session GUID bytes with the vote
