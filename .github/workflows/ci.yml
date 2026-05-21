@@ -7,9 +7,10 @@ on:
   pull_request:
     branches: [main]
 
+# Default least-privilege token for every job. Jobs that need more declare it
+# locally (only the push job needs packages:write).
 permissions:
   contents: read
-  packages: write
 
 env:
   IMAGE_NAME: ${{ github.repository }}
@@ -76,6 +77,9 @@ jobs:
     runs-on: ubuntu-latest
     # Push on main branch and on tags; PRs only build (no push) to validate the Dockerfile.
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -113,8 +117,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Scope the cache by ref so a PR can't poison the main-branch cache.
+          cache-from: type=gha,scope=${{ github.ref_name }}
+          cache-to: type=gha,scope=${{ github.ref_name }},mode=max
 
   build-pr:
     name: Build image (PR only, no push)
@@ -132,5 +137,6 @@ jobs:
         with:
           context: .
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Scope the cache by ref so a PR can't poison the main-branch cache.
+          cache-from: type=gha,scope=${{ github.ref_name }}
+          cache-to: type=gha,scope=${{ github.ref_name }},mode=max
