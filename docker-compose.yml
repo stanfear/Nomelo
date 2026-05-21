@@ -1,0 +1,38 @@
+services:
+  app:
+    image: nomelo/app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      ConnectionStrings__Default: "Host=db;Database=nomelo;Username=ns;Password=${DB_PASSWORD}"
+      OIDC__Authority: "${OIDC_AUTHORITY}"
+      OIDC__ClientId: "${OIDC_CLIENT_ID}"
+      OIDC__ClientSecret: "${OIDC_CLIENT_SECRET}"
+      Lists__Directory: "/data/lists"
+    volumes:
+      - ./lists:/data/lists:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: nomelo
+      POSTGRES_USER: ns
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ns -d nomelo"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,13 @@
+# Copy to docker-compose.override.yml for local development.
+# This file is loaded automatically by `docker compose up`.
+services:
+  app:
+    # Mount the source-of-truth lists for hot iteration (no restart needed if only JSON changes
+    # require a restart — list registration happens at startup).
+    volumes:
+      - ./lists:/data/lists:ro
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+  db:
+    ports:
+      - "5432:5432"
