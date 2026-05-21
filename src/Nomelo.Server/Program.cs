@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Nomelo.Server.Auth;
 using Nomelo.Server.Data;
@@ -32,6 +33,23 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("database");
 
+// Honor X-Forwarded-* headers from the reverse proxy that terminates TLS in
+// front of the container (Caddy/Traefik/nginx/Authentik forward auth). Without
+// this, the OIDC middleware builds the redirect_uri using the in-container
+// scheme (http) instead of the public one (https), and providers like Authentik
+// reject the mismatch in Strict mode. KnownNetworks/Proxies are cleared so the
+// container trusts whatever proxy is on the docker network — production exposes
+// only the proxy to the outside, so this is safe in a single-host setup.
+builder.Services.Configure<ForwardedHeadersOptions>(opt =>
+{
+    opt.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedProto
+        | ForwardedHeaders.XForwardedHost;
+    opt.KnownNetworks.Clear();
+    opt.KnownProxies.Clear();
+});
+
 builder.Services.AddNomeloAuth(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
@@ -52,6 +70,10 @@ using (var scope = app.Services.CreateScope())
         throw;
     }
 }
+
+// ForwardedHeaders MUST run before any middleware that reads the request scheme
+// or host (auth, redirects, link generation).
+app.UseForwardedHeaders();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
