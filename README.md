@@ -86,10 +86,33 @@ Nomelo ships as a single Docker image plus PostgreSQL. Aspire is for local dev o
 
 ### Quick start
 
+Two deployment modes are supported; pick whichever fits your workflow.
+
+#### A. Build on the server
+
+Clone the repo on the host, then:
+
 ```bash
 cp .env.example .env
 # fill DB_PASSWORD, OIDC_* values
 docker compose up --build -d
+```
+
+#### B. Pull a prebuilt image from GHCR
+
+The repo's CI publishes an image to `ghcr.io/stanfear/nomelo` on every push to `main` (`latest`) and on every tag matching `v*` (`v1.2.3`, `1.2`, etc.). On the host, you only need `docker-compose.yml`, `docker-compose.prod.yml`, `.env`, and a `lists/` directory — no source code:
+
+```bash
+mkdir -p nomelo-host && cd nomelo-host
+curl -O https://raw.githubusercontent.com/stanfear/Nomelo/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/stanfear/Nomelo/main/docker-compose.prod.yml
+curl -O https://raw.githubusercontent.com/stanfear/Nomelo/main/.env.example
+cp .env.example .env
+# fill DB_PASSWORD, OIDC_* values; optionally set NOMELO_IMAGE_TAG=v1.0.0 to pin a release
+mkdir lists  # populate with your JSON lists
+
+docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 Once `app` is healthy, open `http://localhost:8080/`.
@@ -120,10 +143,18 @@ cat backup-2026-05-18.sql | docker compose exec -T db psql -U ns nomelo
 
 ### Upgrades
 
+**Build-on-server mode:**
 ```bash
 git pull
 docker compose build app
 docker compose up -d app
+```
+
+**GHCR mode:**
+```bash
+# bump NOMELO_IMAGE_TAG in .env if you pin a version, otherwise latest is implicit
+docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 EF Core migrations run automatically on container start.
