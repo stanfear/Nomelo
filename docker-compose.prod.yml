@@ -1,0 +1,14 @@
+# Production override: pull the prebuilt image from GHCR instead of building
+# locally. Use:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Set NOMELO_IMAGE_TAG in your .env (or shell) to pin a specific version, e.g.
+# NOMELO_IMAGE_TAG=v1.0.0. Defaults to "latest".
+
+services:
+  app:
+    image: ghcr.io/stanfear/nomelo:${NOMELO_IMAGE_TAG:-latest}
+    build: !reset null
+    pull_policy: always
