@@ -33,7 +33,6 @@ export function Sparkline({ data, className }: Props) {
       className={className ?? "name-card__sparkline"}
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
-      shapeRendering="crispEdges"
       role="img"
       aria-label="Évolution sur la période"
       data-testid="sparkline"
@@ -41,14 +40,16 @@ export function Sparkline({ data, className }: Props) {
       {chars.map((c, i) => {
         const h = HEIGHT_MAP[c] ?? 0;
         if (h === 0) return null;
-        // Tiny horizontal overlap (0.02) closes any sub-pixel seam between
-        // adjacent bars when the SVG is scaled to non-integer pixel widths.
+        // Each bar extends slightly past its column so the antialiased right
+        // edge overlaps the next bar's antialiased left edge — closes any
+        // sub-pixel seam without needing crispEdges (which introduces visible
+        // periodic gaps when the SVG scales to a non-multiple-of-25 width).
         return (
           <rect
             key={i}
             x={i}
             y={height - h}
-            width={1.02}
+            width={1.1}
             height={h}
           />
         );
