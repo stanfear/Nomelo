@@ -42,9 +42,9 @@ public class VoteProcessorTests : IAsyncLifetime
         var cache = _sp.GetRequiredService<ListCache>();
         cache.Set(new ListFile(listId, "T", new[]
         {
-            new ListFileItem("Alice", Array.Empty<string>(), null),
-            new ListFileItem("Bob", Array.Empty<string>(), null),
-            new ListFileItem("Carol", Array.Empty<string>(), null)
+            new ListFileItem("Alice", Array.Empty<string>(), null, null, null, null),
+            new ListFileItem("Bob", Array.Empty<string>(), null, null, null, null),
+            new ListFileItem("Carol", Array.Empty<string>(), null, null, null, null)
         }));
     }
 
@@ -160,3 +160,4 @@ public class VoteProcessorTests : IAsyncLifetime
         after.Should().BeAfter(before);
     }
 }
+
