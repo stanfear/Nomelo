@@ -67,7 +67,10 @@ test("renders sparkline and peak block when metadata present", () => {
     peakCount: 95245,
   };
   render(<NameCard item={enriched} onPrefer={() => {}} onBan={() => {}} side="A" />);
-  expect(screen.getByText("▆▇█▇▅")).toBeInTheDocument();
+  const svg = screen.getByTestId("sparkline");
+  expect(svg).toBeInTheDocument();
+  // 5 input chars all have non-zero height → 5 rendered bars.
+  expect(svg.querySelectorAll("rect")).toHaveLength(5);
   expect(screen.getByText(/Pic en 1963/)).toBeInTheDocument();
   expect(screen.getByText(/naissances/)).toBeInTheDocument();
 });
@@ -75,5 +78,5 @@ test("renders sparkline and peak block when metadata present", () => {
 test("no sparkline or peak block when metadata absent", () => {
   render(<NameCard item={emptyItem} onPrefer={() => {}} onBan={() => {}} side="B" />);
   expect(screen.queryByText(/Pic en/)).not.toBeInTheDocument();
-  expect(screen.queryByText("▆▇█▇▅")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("sparkline")).not.toBeInTheDocument();
 });

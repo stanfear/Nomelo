@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import type { PairItemDto } from "../api/types";
+import { Sparkline } from "./Sparkline";
 
 export interface RippleSource {
   /** Coordinates in client space (event.clientX/Y). Falls back to card center. */
@@ -72,11 +73,7 @@ export function NameCard({ item, side, onPrefer, onBan, disabled, ripple }: Prop
         {item.description && (
           <span className="name-card__description">{item.description}</span>
         )}
-        {item.sparkline && (
-          <span className="name-card__sparkline" aria-hidden="true">
-            {item.sparkline}
-          </span>
-        )}
+        {item.sparkline && <Sparkline data={item.sparkline} />}
         {item.peakYear !== null && item.peakCount !== null && (
           <span className="name-card__peak">
             Pic en {item.peakYear} · {new Intl.NumberFormat("fr-FR").format(item.peakCount!)} naissances
