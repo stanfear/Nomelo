@@ -80,7 +80,7 @@ public static class VotingEndpoints
         var stable = StabilityCounter.ConsecutiveNonUpsets(upsetFlags) >= StabilityCounter.StabilityThreshold;
         var voteCount = await db.Votes.AsNoTracking().CountAsync(v => v.SessionId == sessionId, ct);
 
-        return new ResultsDto(sessionId, listMeta.Id, listMeta.Name, voteCount, stable, ranked, banned);
+        return new ResultsDto(sessionId, listMeta.Id, listMeta.Name, session.Name, voteCount, stable, ranked, banned);
     }
 
     private static async Task<bool> OwnsSession(AppDbContext db, Guid id, string userId, CancellationToken ct)

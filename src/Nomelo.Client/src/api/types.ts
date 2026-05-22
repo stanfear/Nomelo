@@ -8,6 +8,8 @@ export interface SessionDto {
   id: string;
   listId: string;
   listName: string;
+  /** User-chosen label; if null, fall back to listName for display. */
+  name: string | null;
   confidenceThreshold: number;
   createdAt: string;
   updatedAt: string;
@@ -19,6 +21,7 @@ export interface SessionDto {
 export interface CreateSessionRequest {
   listId: string;
   confidenceThreshold: number;
+  name?: string;
 }
 
 export interface PairItemDto {
@@ -65,6 +68,8 @@ export interface ResultsDto {
   sessionId: string;
   listId: string;
   listName: string;
+  /** User-chosen label inherited from the session; null falls back to listName. */
+  name: string | null;
   voteCount: number;
   stabilityReached: boolean;
   ranked: RankedItemDto[];

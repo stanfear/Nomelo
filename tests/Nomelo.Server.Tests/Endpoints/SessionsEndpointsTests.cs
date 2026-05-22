@@ -50,9 +50,35 @@ public class SessionsEndpointsTests : IAsyncLifetime
         res.StatusCode.Should().Be(HttpStatusCode.Created);
         var dto = await res.Content.ReadFromJsonAsync<SessionDto>();
         dto!.ListId.Should().Be("a");
+        dto.Name.Should().BeNull();
         dto.ConfidenceThreshold.Should().Be(5);
         dto.ShareToken.Should().NotBeNullOrWhiteSpace();
         dto.VoteCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task POST_stores_and_returns_custom_name()
+    {
+        var client = _factory.CreateClient();
+
+        var res = await client.PostAsJsonAsync("/api/sessions",
+            new CreateSessionRequest("a", 3, "  Prénoms de bébé  "));
+
+        res.StatusCode.Should().Be(HttpStatusCode.Created);
+        var dto = await res.Content.ReadFromJsonAsync<SessionDto>();
+        dto!.Name.Should().Be("Prénoms de bébé");
+    }
+
+    [Fact]
+    public async Task POST_empty_name_is_stored_as_null()
+    {
+        var client = _factory.CreateClient();
+
+        var res = await client.PostAsJsonAsync("/api/sessions",
+            new CreateSessionRequest("a", 3, "   "));
+
+        var dto = await res.Content.ReadFromJsonAsync<SessionDto>();
+        dto!.Name.Should().BeNull();
     }
 
     [Fact]

@@ -32,6 +32,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
             e.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
             e.Property(x => x.ListId).HasColumnName("list_id").IsRequired();
+            e.Property(x => x.Name).HasColumnName("name");
             e.Property(x => x.ConfidenceThreshold).HasColumnName("confidence_threshold").HasDefaultValue(3);
             e.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");

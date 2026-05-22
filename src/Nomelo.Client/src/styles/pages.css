@@ -156,6 +156,20 @@
   font-variant-numeric: tabular-nums;
 }
 
+.session-card__sublabel {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: -0.15rem;
+}
+
+.results__hero-sublabel {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 .session-card__share {
   position: relative;
   z-index: 1;

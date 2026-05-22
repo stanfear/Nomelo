@@ -35,7 +35,7 @@ public static class SessionsEndpoints
                 .ToDictionaryAsync(g => g.Key, g => g.Count, ct);
 
             var dtos = sessions.Select(x => new SessionDto(
-                x.s.Id, x.s.ListId, x.ListName, x.s.ConfidenceThreshold,
+                x.s.Id, x.s.ListId, x.ListName, x.s.Name, x.s.ConfidenceThreshold,
                 x.s.CreatedAt, x.s.UpdatedAt, x.s.ShareToken,
                 counts.GetValueOrDefault(x.s.Id, 0),
                 false)).ToList();
@@ -62,6 +62,12 @@ public static class SessionsEndpoints
                 return Results.NotFound(new { error = "list not found" });
             }
 
+            // Trim then null-coalesce empty so the DB stores NULL (not "")
+            // when no name was provided; display fallback to list name relies
+            // on `Name is null` rather than `IsNullOrEmpty`.
+            var trimmedName = req.Name?.Trim();
+            if (string.IsNullOrEmpty(trimmedName)) trimmedName = null;
+
             var userId = currentUser.UserId;
             var now = DateTimeOffset.UtcNow;
             var session = new VotingSession
@@ -69,6 +75,7 @@ public static class SessionsEndpoints
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ListId = list.Id,
+                Name = trimmedName,
                 ConfidenceThreshold = req.ConfidenceThreshold,
                 CreatedAt = now,
                 UpdatedAt = now,
@@ -80,7 +87,7 @@ public static class SessionsEndpoints
             logger.LogInformation("Session {SessionId} created for user {UserId} on list {ListId}",
                 session.Id, userId, list.Id);
 
-            var dto = new SessionDto(session.Id, list.Id, list.Name,
+            var dto = new SessionDto(session.Id, list.Id, list.Name, session.Name,
                 session.ConfidenceThreshold, session.CreatedAt, session.UpdatedAt,
                 session.ShareToken, 0, false);
             return Results.Created($"/api/sessions/{session.Id}", dto);
@@ -118,7 +125,7 @@ public static class SessionsEndpoints
             }).ToList();
             var stable = StabilityCounter.ConsecutiveNonUpsets(upsetFlags) >= StabilityCounter.StabilityThreshold;
 
-            return Results.Ok(new SessionDto(session.Id, list.Id, list.Name,
+            return Results.Ok(new SessionDto(session.Id, list.Id, list.Name, session.Name,
                 session.ConfidenceThreshold, session.CreatedAt, session.UpdatedAt,
                 session.ShareToken, voteCount, stable));
         });

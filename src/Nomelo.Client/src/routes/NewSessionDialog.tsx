@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLists, useCreateSession } from "../api/hooks";
 import { SelectField } from "../components/SelectField";
@@ -14,12 +14,19 @@ export function NewSessionDialog({ onClose }: Props) {
 
   const [listId, setListId] = useState("");
   const [threshold, setThreshold] = useState(3);
+  const [name, setName] = useState("");
+  const nameId = useId();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!listId) return;
     try {
-      const session = await create.mutateAsync({ listId, confidenceThreshold: threshold });
+      const trimmed = name.trim();
+      const session = await create.mutateAsync({
+        listId,
+        confidenceThreshold: threshold,
+        name: trimmed.length > 0 ? trimmed : undefined,
+      });
       onClose();
       navigate(`/sessions/${session.id}`);
     } catch {
@@ -37,6 +44,18 @@ export function NewSessionDialog({ onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="dialog-title" className="dialog__title">Nouvelle session</h2>
+
+        <label className="dialog__field" htmlFor={nameId}>
+          Nom de la session
+          <input
+            id={nameId}
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Optionnel — défaut : nom de la liste"
+            maxLength={120}
+          />
+        </label>
 
         <SelectField
           label="Liste"
