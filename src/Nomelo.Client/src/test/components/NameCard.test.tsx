@@ -69,8 +69,10 @@ test("renders sparkline and peak block when metadata present", () => {
   render(<NameCard item={enriched} onPrefer={() => {}} onBan={() => {}} side="A" />);
   const svg = screen.getByTestId("sparkline");
   expect(svg).toBeInTheDocument();
-  // 5 input chars all have non-zero height → 5 rendered bars.
-  expect(svg.querySelectorAll("rect")).toHaveLength(5);
+  // Sparkline is drawn as a single closed path covering all 5 columns.
+  const path = svg.querySelector("path");
+  expect(path).not.toBeNull();
+  expect(path!.getAttribute("d")).toMatch(/^M 0 8/);
   expect(screen.getByText(/Pic en 1963/)).toBeInTheDocument();
   expect(screen.getByText(/naissances/)).toBeInTheDocument();
 });
