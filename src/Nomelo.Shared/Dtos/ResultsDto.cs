@@ -4,6 +4,7 @@ public record ResultsDto(
     Guid SessionId,
     string ListId,
     string ListName,
+    string? Name,
     int VoteCount,
     bool StabilityReached,
     IReadOnlyList<RankedItemDto> Ranked,

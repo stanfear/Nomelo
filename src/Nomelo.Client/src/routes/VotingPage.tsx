@@ -115,7 +115,7 @@ export function VotingPage() {
       <main className="voting">
         <header className="voting__header">
           <Link to="/">← Accueil</Link>
-          <span>{session.data?.listName}</span>
+          <span>{session.data?.name ?? session.data?.listName}</span>
         </header>
         <section className="voting__empty">
           <p>Plus de paires disponibles. Tous les éléments restants sont équivalents ou bannis.</p>
@@ -135,7 +135,7 @@ export function VotingPage() {
       <header className="voting__header">
         <Link to="/">← Accueil</Link>
         <span className="voting__title">
-          <span className="voting__title-name">{session.data?.listName}</span>
+          <span className="voting__title-name">{session.data?.name ?? session.data?.listName}</span>
           <span className="voting__title-count">{voteCount} vote{voteCount > 1 ? "s" : ""}</span>
         </span>
         <Link to={`/sessions/${id}/results`}>Voir les résultats</Link>

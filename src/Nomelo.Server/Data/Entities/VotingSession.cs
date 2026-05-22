@@ -5,6 +5,8 @@ public class VotingSession
     public Guid Id { get; set; }
     public string UserId { get; set; } = "";
     public string ListId { get; set; } = "";
+    /// <summary>Free-form user-chosen label; null means "use the list name".</summary>
+    public string? Name { get; set; }
     public int ConfidenceThreshold { get; set; } = 3;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

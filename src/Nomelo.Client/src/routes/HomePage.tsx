@@ -31,7 +31,10 @@ export function HomePage() {
             {sessions.map((s) => (
               <li key={s.id} className="session-card">
                 <Link to={`/sessions/${s.id}`} className="session-card__link">
-                  <span className="session-card__name">{s.listName}</span>
+                  <span className="session-card__name">{s.name ?? s.listName}</span>
+                  {s.name && (
+                    <span className="session-card__sublabel">{s.listName}</span>
+                  )}
                   <span className="session-card__meta">
                     {s.voteCount} votes ·{" "}
                     {new Date(s.updatedAt).toLocaleDateString("fr-FR")}

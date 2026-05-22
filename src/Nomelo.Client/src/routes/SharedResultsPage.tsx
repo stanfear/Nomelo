@@ -21,7 +21,10 @@ export function SharedResultsPage() {
       <div className="results__main">
         <section className="results__hero">
           <p className="results__hero-eyebrow">Classement partagé</p>
-          <h1 className="results__hero-title">{data.listName}</h1>
+          <h1 className="results__hero-title">{data.name ?? data.listName}</h1>
+          {data.name && (
+            <p className="results__hero-sublabel">{data.listName}</p>
+          )}
           <p className="results__shared-note">
             Vue partagée · lecture seule · {data.voteCount} votes
           </p>

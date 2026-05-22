@@ -10,6 +10,7 @@ const ALICE: SessionDto = {
   id: "00000000-0000-0000-0000-000000000001",
   listId: "a",
   listName: "Liste A",
+  name: null,
   confidenceThreshold: 3,
   createdAt: "2026-05-01T00:00:00Z",
   updatedAt: "2026-05-02T00:00:00Z",
@@ -29,6 +30,7 @@ const RESULTS: ResultsDto = {
   sessionId: ALICE.id,
   listId: ALICE.listId,
   listName: ALICE.listName,
+  name: null,
   voteCount: 7,
   stabilityReached: false,
   ranked: [

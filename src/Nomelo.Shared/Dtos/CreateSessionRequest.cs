@@ -1,3 +1,3 @@
 namespace Nomelo.Shared.Dtos;
 
-public record CreateSessionRequest(string ListId, int ConfidenceThreshold);
+public record CreateSessionRequest(string ListId, int ConfidenceThreshold, string? Name = null);
