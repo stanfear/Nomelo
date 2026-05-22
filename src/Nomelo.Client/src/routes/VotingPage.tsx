@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { useNextPair, useSession, useSubmitVote } from "../api/hooks";
 import { NameCard, type RippleSource } from "../components/NameCard";
 import { StabilityBanner } from "../components/StabilityBanner";
-import { OrientationHint } from "../components/OrientationHint";
 import type { PairDto, VoteResult } from "../api/types";
 import "../styles/voting.css";
 
@@ -130,8 +129,6 @@ export function VotingPage() {
 
   return (
     <main className="voting">
-      <OrientationHint />
-
       <header className="voting__header">
         <Link to="/">← Accueil</Link>
         <span className="voting__title">

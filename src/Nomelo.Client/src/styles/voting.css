@@ -407,16 +407,8 @@
   .voting__shortcuts { display: flex; }
 }
 
-/* ---------- Orientation hint ---------- */
+/* ---------- Portrait layout (phone-first vertical stack) ---------- */
 @media (orientation: portrait) {
-  .orientation-hint {
-    display: block;
-    background: #fff7d6;
-    color: #3a2f00;
-    padding: 0.5rem;
-    text-align: center;
-  }
-
   .voting__pair {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
@@ -445,7 +437,57 @@
   .name-card[data-side="B"]:active .name-card__ripple-clip { clip-path: inset(1% 0 0 0); }
 }
 
-@media (orientation: landscape) { .orientation-hint { display: none; } }
+/* ---------- Compact mode: short viewports (phone landscape) ----------
+   The browser chrome eats much of the height in mobile landscape, so we
+   compress header/footer and trim the card's internal padding to give the
+   names back the central space. */
+@media (max-height: 520px) {
+  .voting__header {
+    padding: 0.4rem 0.85rem;
+  }
+  .voting__title-name { font-size: 0.85rem; }
+  .voting__title-count { font-size: 0.7rem; }
+
+  .name-card__prefer-fullface {
+    padding: 0.5rem 1rem;
+    gap: 0.4rem;
+  }
+
+  .name-card__value {
+    font-size: clamp(2rem, 6vw, 4rem);
+  }
+  .name-card__variants {
+    font-size: clamp(0.85rem, 1.3vw, 1.1rem);
+  }
+  .name-card__description {
+    font-size: clamp(0.75rem, 1vw, 0.95rem);
+    margin-top: 0.1rem;
+  }
+  .name-card__sparkline {
+    height: clamp(18px, 3vw, 32px);
+    margin-top: 0.25rem;
+  }
+  .name-card__peak {
+    font-size: clamp(0.7rem, 0.95vw, 0.85rem);
+  }
+
+  .name-card__ban,
+  .name-card__split {
+    bottom: 0.5rem;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+  }
+
+  .voting__shared {
+    padding: 0.5rem 0.85rem calc(0.5rem + env(safe-area-inset-bottom));
+    gap: 0.5rem;
+  }
+  .voting__shared button {
+    padding: 0.65rem 0.8rem;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  }
+}
 
 @keyframes slideInTop {
   from { transform: translateY(-40px); opacity: 0; }
