@@ -2,23 +2,49 @@ import { useMemo, useState } from "react";
 import type { RankedItemDto } from "../api/types";
 import "../styles/pages.css";
 
-interface Props { ranked: RankedItemDto[]; banned: RankedItemDto[]; }
+interface Props {
+  ranked: RankedItemDto[];
+  banned: RankedItemDto[];
+  /** When set, ranked rows show a checkbox column wired to this state. */
+  selection?: {
+    selected: ReadonlySet<string>;
+    onToggle: (value: string) => void;
+  };
+}
 
 interface RowProps {
   item: RankedItemDto;
   showRank: boolean;
   maxElo: number;
   minElo: number;
+  selectable: boolean;
+  isSelected: boolean;
+  onToggle?: (value: string) => void;
 }
 
-function Row({ item, showRank, maxElo, minElo }: RowProps) {
+function Row({ item, showRank, maxElo, minElo, selectable, isSelected, onToggle }: RowProps) {
   const elo = Math.round(item.eloScore);
   const podium = showRank && item.rank <= 3 ? String(item.rank) : undefined;
   const range = Math.max(maxElo - minElo, 1);
   const pct = Math.max(8, Math.min(100, ((item.eloScore - minElo) / range) * 100));
 
   return (
-    <div className="ranked__row" role="row" data-podium={podium}>
+    <div
+      className="ranked__row"
+      role="row"
+      data-podium={podium}
+      data-selected={isSelected ? "true" : undefined}
+    >
+      {selectable && (
+        <div className="ranked__select" role="cell">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggle?.(item.value)}
+            aria-label={`Sélectionner ${item.value}`}
+          />
+        </div>
+      )}
       <div className="ranked__rank" role="cell" aria-label={showRank ? `Rang ${item.rank}` : "Banni"}>
         {showRank ? item.rank : "·"}
       </div>
@@ -43,7 +69,7 @@ function Row({ item, showRank, maxElo, minElo }: RowProps) {
   );
 }
 
-export function RankedTable({ ranked, banned }: Props) {
+export function RankedTable({ ranked, banned, selection }: Props) {
   const [showBanned, setShowBanned] = useState(false);
   const bannedLabel = banned.length === 1 ? "1 banni" : `${banned.length} bannis`;
 
@@ -53,10 +79,26 @@ export function RankedTable({ ranked, banned }: Props) {
     return { maxElo: Math.max(...scores), minElo: Math.min(...scores) };
   }, [ranked]);
 
+  const selectable = !!selection;
+
   return (
-    <div className="ranked" role="table" aria-label="Classement">
+    <div
+      className="ranked"
+      role="table"
+      aria-label="Classement"
+      data-selectable={selectable ? "true" : undefined}
+    >
       {ranked.map((r) => (
-        <Row key={r.value} item={r} showRank maxElo={maxElo} minElo={minElo} />
+        <Row
+          key={r.value}
+          item={r}
+          showRank
+          maxElo={maxElo}
+          minElo={minElo}
+          selectable={selectable}
+          isSelected={selection?.selected.has(r.value) ?? false}
+          onToggle={selection?.onToggle}
+        />
       ))}
 
       {banned.length > 0 && (
@@ -78,6 +120,8 @@ export function RankedTable({ ranked, banned }: Props) {
                   showRank={false}
                   maxElo={maxElo}
                   minElo={minElo}
+                  selectable={false}
+                  isSelected={false}
                 />
               ))}
             </div>

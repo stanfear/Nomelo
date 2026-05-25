@@ -623,6 +623,29 @@
   gap: 0.6rem;
 }
 
+.ranked[data-selectable="true"] .ranked__row {
+  grid-template-columns: 32px 56px 1fr auto auto;
+}
+.ranked[data-selectable="true"] .ranked__banned .ranked__row {
+  grid-template-columns: 56px 1fr auto auto;
+}
+
+.ranked__select {
+  display: grid;
+  place-items: center;
+}
+.ranked__select input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-like);
+}
+
+.ranked__row[data-selected="true"] {
+  background: rgba(255, 212, 59, 0.08);
+  border-color: rgba(255, 212, 59, 0.35);
+}
+
 .ranked__row {
   display: grid;
   grid-template-columns: 56px 1fr auto auto;
@@ -881,3 +904,95 @@
   .ranked__seen { display: none; }
   .ranked__elo-bar { display: none; }
 }
+
+/* ---------- Bulk action bar ---------- */
+.bulk-bar {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 1rem 0.7rem 1.2rem;
+  background: var(--surface-glass);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: fadeUp var(--duration-base) var(--easing-out);
+}
+.bulk-bar__count {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.bulk-bar__cancel,
+.bulk-bar__action {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--radius-pill);
+  transition: filter var(--duration-fast), transform var(--duration-fast);
+}
+.bulk-bar__cancel {
+  background: transparent;
+  color: var(--text-muted);
+}
+.bulk-bar__cancel:hover { color: var(--text-primary); }
+.bulk-bar__action {
+  background: var(--color-ban);
+  color: var(--color-ban-ink);
+}
+.bulk-bar__action:hover:not(:disabled) { filter: brightness(1.08); }
+.bulk-bar__action:active:not(:disabled) { transform: translateY(1px); }
+.bulk-bar__action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---------- Dialog actions / danger confirm ---------- */
+.dialog__body {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+.dialog__cancel,
+.dialog__confirm {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-pill);
+  transition: filter var(--duration-fast);
+}
+.dialog__cancel {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+}
+.dialog__cancel:hover { color: var(--text-primary); }
+.dialog__confirm {
+  background: var(--color-like);
+  color: var(--color-like-ink);
+}
+.dialog__confirm--danger {
+  background: var(--color-ban);
+  color: var(--color-ban-ink);
+}
+.dialog__confirm:hover:not(:disabled) { filter: brightness(1.08); }
+.dialog__confirm:disabled,
+.dialog__cancel:disabled { opacity: 0.5; cursor: not-allowed; }

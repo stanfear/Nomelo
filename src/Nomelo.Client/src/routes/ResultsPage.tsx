@@ -1,13 +1,36 @@
+import { useCallback, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useResults } from "../api/hooks";
+import { useBulkBan, useResults } from "../api/hooks";
 import { RankedTable } from "../components/RankedTable";
 import "../styles/pages.css";
 
 export function ResultsPage() {
   const { id = "" } = useParams();
   const { data, isLoading } = useResults(id);
+  const bulkBan = useBulkBan(id);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirming, setConfirming] = useState(false);
+
+  const toggle = useCallback((value: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }, []);
+
+  const clear = () => setSelected(new Set());
+
+  const confirmBan = async () => {
+    await bulkBan.mutateAsync({ items: Array.from(selected) });
+    clear();
+    setConfirming(false);
+  };
 
   if (isLoading || !data) return <p className="page-loading">Chargement…</p>;
+
+  const count = selected.size;
 
   return (
     <main className="results">
@@ -48,8 +71,61 @@ export function ResultsPage() {
           </div>
         )}
 
-        <RankedTable ranked={data.ranked} banned={data.banned} />
+        <RankedTable
+          ranked={data.ranked}
+          banned={data.banned}
+          selection={{ selected, onToggle: toggle }}
+        />
       </div>
+
+      {count > 0 && (
+        <div className="bulk-bar" role="region" aria-label="Action en lot">
+          <span className="bulk-bar__count">
+            {count} sélectionné{count > 1 ? "s" : ""}
+          </span>
+          <button type="button" className="bulk-bar__cancel" onClick={clear}>
+            Annuler
+          </button>
+          <button
+            type="button"
+            className="bulk-bar__action"
+            onClick={() => setConfirming(true)}
+            disabled={bulkBan.isPending}
+          >
+            Bannir
+          </button>
+        </div>
+      )}
+
+      {confirming && (
+        <div className="dialog-backdrop" role="dialog" aria-modal="true">
+          <div className="dialog">
+            <h2 className="dialog__title">Bannir {count} nom{count > 1 ? "s" : ""} ?</h2>
+            <p className="dialog__body">
+              Cette action retire les éléments du classement et les place dans la liste des bannis.
+              Elle n'est pas annulable depuis le bouton retour de vote.
+            </p>
+            <div className="dialog__actions">
+              <button
+                type="button"
+                className="dialog__cancel"
+                onClick={() => setConfirming(false)}
+                disabled={bulkBan.isPending}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                className="dialog__confirm dialog__confirm--danger"
+                onClick={confirmBan}
+                disabled={bulkBan.isPending}
+              >
+                {bulkBan.isPending ? "Bannissement…" : "Bannir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

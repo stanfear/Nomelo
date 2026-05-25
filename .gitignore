@@ -1,5 +1,12 @@
 bin/
 obj/
+
+# Large enriched name datasets — local-only, not versioned. The sample
+# fixtures (sample.json, prenoms-fr-100.json) stay tracked because they
+# are tiny test data used by AppHost out of the box.
+src/Nomelo.AppHost/lists/prenoms-*.json
+!src/Nomelo.AppHost/lists/prenoms-fr-100.json
+
 *.user
 .vs/
 appsettings.*.local.json
