@@ -47,16 +47,14 @@ public static class ResultsBuilder
                 lastKey = key;
             }
             ranked.Add(new RankedItemDto(
-                currentRank, x.Item.Value, x.Item.Variants, x.Elo, x.Shown, false,
-                x.Item.Sparkline, x.Item.PeakYear, x.Item.PeakCount));
+                currentRank, x.Item.Value, x.Item.Variants, x.Elo, x.Shown, false));
         }
 
         var banned = items
             .Where(x => x.Banned)
             .OrderBy(x => x.Item.Value)
             .Select(x => new RankedItemDto(
-                0, x.Item.Value, x.Item.Variants, x.Elo, x.Shown, true,
-                x.Item.Sparkline, x.Item.PeakYear, x.Item.PeakCount))
+                0, x.Item.Value, x.Item.Variants, x.Elo, x.Shown, true))
             .ToList();
 
         return (ranked, banned);

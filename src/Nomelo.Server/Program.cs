@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Nomelo.Server.Auth;
 using Nomelo.Server.Data;
@@ -50,6 +52,25 @@ builder.Services.Configure<ForwardedHeadersOptions>(opt =>
     opt.KnownProxies.Clear();
 });
 
+// Brotli + gzip response compression for API payloads. Large /results
+// responses (multi-thousand-item rankings) compress 5-8x and dominate the
+// page load time on slow connections.
+builder.Services.AddResponseCompression(o =>
+{
+    o.EnableForHttps = true;
+    o.Providers.Add<BrotliCompressionProvider>();
+    o.Providers.Add<GzipCompressionProvider>();
+    o.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+    {
+        "application/json",
+        "application/javascript",
+        "text/css",
+        "image/svg+xml",
+    });
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
+builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
+
 builder.Services.AddNomeloAuth(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
@@ -74,6 +95,10 @@ using (var scope = app.Services.CreateScope())
 // ForwardedHeaders MUST run before any middleware that reads the request scheme
 // or host (auth, redirects, link generation).
 app.UseForwardedHeaders();
+
+// Compression sits before static files and endpoints so both bundled assets
+// and JSON API responses get compressed in a single pass.
+app.UseResponseCompression();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
