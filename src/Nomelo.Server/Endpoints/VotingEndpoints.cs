@@ -98,6 +98,36 @@ public static class VotingEndpoints
             return Results.NoContent();
         });
 
+        group.MapPost("/items/unbans", async (
+            Guid id, BulkBanRequest req, AppDbContext db,
+            ICurrentUser currentUser, CancellationToken ct) =>
+        {
+            if (!await OwnsSession(db, id, currentUser.UserId, ct)) return Results.NotFound();
+            if (req.Items is null || req.Items.Count == 0)
+                return Results.BadRequest(new { error = "items must be a non-empty array" });
+
+            var requested = req.Items.Distinct(StringComparer.Ordinal).ToList();
+
+            await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+            // Unban only touches rows that already exist — an item with no
+            // ItemState row is implicitly unbanned, so there is nothing to do.
+            // No list-membership validation is needed: rows that don't belong
+            // to the session simply won't be found.
+            var rows = await db.ItemStates
+                .Where(s => s.SessionId == id && requested.Contains(s.Item))
+                .ToListAsync(ct);
+            foreach (var s in rows) s.IsBanned = false;
+
+            var session = await db.Sessions.FirstAsync(s => s.Id == id, ct);
+            session.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+
+            return Results.NoContent();
+        });
+
         group.MapGet("/results", async (
             Guid id, AppDbContext db, ListCache cache,
             ICurrentUser currentUser, CancellationToken ct) =>

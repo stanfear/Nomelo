@@ -108,6 +108,22 @@ export const useBulkBan = (sessionId: string) => {
   });
 };
 
+export const useBulkUnban = (sessionId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (req: BulkBanRequest) =>
+      apiFetch<void>(`/api/sessions/${sessionId}/items/unbans`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["results", sessionId] });
+      qc.invalidateQueries({ queryKey: ["next-pair", sessionId] });
+      qc.invalidateQueries({ queryKey: ["session", sessionId] });
+    },
+  });
+};
+
 export const useResults = (sessionId: string | undefined) =>
   useQuery({
     queryKey: ["results", sessionId],

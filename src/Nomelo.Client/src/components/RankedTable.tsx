@@ -2,14 +2,18 @@ import { memo, useMemo, useState } from "react";
 import type { RankedItemDto } from "../api/types";
 import "../styles/pages.css";
 
+interface SelectionState {
+  selected: ReadonlySet<string>;
+  onToggle: (value: string) => void;
+}
+
 interface Props {
   ranked: RankedItemDto[];
   banned: RankedItemDto[];
   /** When set, ranked rows show a checkbox column wired to this state. */
-  selection?: {
-    selected: ReadonlySet<string>;
-    onToggle: (value: string) => void;
-  };
+  selection?: SelectionState;
+  /** When set, banned rows show a checkbox column wired to this state. */
+  bannedSelection?: SelectionState;
 }
 
 interface RowProps {
@@ -72,7 +76,7 @@ const Row = memo(function Row({ item, showRank, maxElo, minElo, selectable, isSe
   );
 });
 
-export function RankedTable({ ranked, banned, selection }: Props) {
+export function RankedTable({ ranked, banned, selection, bannedSelection }: Props) {
   const [showBanned, setShowBanned] = useState(false);
   const bannedLabel = banned.length === 1 ? "1 banni" : `${banned.length} bannis`;
 
@@ -90,6 +94,7 @@ export function RankedTable({ ranked, banned, selection }: Props) {
   }, [ranked]);
 
   const selectable = !!selection;
+  const bannedSelectable = !!bannedSelection;
 
   return (
     <div
@@ -122,7 +127,10 @@ export function RankedTable({ ranked, banned, selection }: Props) {
             {showBanned ? "Masquer" : "Afficher"} {bannedLabel}
           </button>
           {showBanned && (
-            <div className="ranked__banned">
+            <div
+              className="ranked__banned"
+              data-selectable={bannedSelectable ? "true" : undefined}
+            >
               {banned.map((r) => (
                 <Row
                   key={r.value}
@@ -130,8 +138,9 @@ export function RankedTable({ ranked, banned, selection }: Props) {
                   showRank={false}
                   maxElo={maxElo}
                   minElo={minElo}
-                  selectable={false}
-                  isSelected={false}
+                  selectable={bannedSelectable}
+                  isSelected={bannedSelection?.selected.has(r.value) ?? false}
+                  onToggle={bannedSelection?.onToggle}
                 />
               ))}
             </div>
