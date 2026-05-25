@@ -52,6 +52,31 @@
   font-size: 0.75rem;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.voting__undo {
+  appearance: none;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-pill);
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.voting__undo:hover {
+  background: var(--surface-card-hover);
+  border-color: var(--color-like);
+}
+.voting__undo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ---------- Empty state ---------- */

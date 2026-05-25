@@ -38,6 +38,15 @@ public static class VotingEndpoints
             return Results.NoContent();
         });
 
+        group.MapDelete("/votes/last", async (
+            Guid id, AppDbContext db, VoteProcessor processor,
+            ICurrentUser currentUser, CancellationToken ct) =>
+        {
+            if (!await OwnsSession(db, id, currentUser.UserId, ct)) return Results.NotFound();
+            var undone = await processor.UndoLast(id, ct);
+            return undone ? Results.NoContent() : Results.NotFound(new { error = "no votes to undo" });
+        });
+
         group.MapGet("/results", async (
             Guid id, AppDbContext db, ListCache cache,
             ICurrentUser currentUser, CancellationToken ct) =>

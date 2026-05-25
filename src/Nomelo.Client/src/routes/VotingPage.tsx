@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useNextPair, useSession, useSubmitVote } from "../api/hooks";
+import { useNextPair, useSession, useSubmitVote, useUndoLastVote } from "../api/hooks";
 import { NameCard, type RippleSource } from "../components/NameCard";
 import { StabilityBanner } from "../components/StabilityBanner";
 import type { PairDto, VoteResult } from "../api/types";
@@ -47,6 +47,7 @@ export function VotingPage() {
   const pair = useNextPair(id);
   const session = useSession(id);
   const submit = useSubmitVote(id);
+  const undo = useUndoLastVote(id);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [rippleA, setRippleA] = useState<RippleSource | undefined>(undefined);
   const [rippleB, setRippleB] = useState<RippleSource | undefined>(undefined);
@@ -81,7 +82,8 @@ export function VotingPage() {
     );
   };
 
-  const sending = submit.isPending || pair.isFetching || !!frozenPair;
+  const sending = submit.isPending || pair.isFetching || !!frozenPair || undo.isPending;
+  const canUndo = (session.data?.voteCount ?? 0) > 0 && !sending;
   const visiblePair = frozenPair ?? pair.data ?? null;
 
   // Clear ripples when the actually-visible pair changes (after the freeze
@@ -133,7 +135,20 @@ export function VotingPage() {
         <Link to="/">← Accueil</Link>
         <span className="voting__title">
           <span className="voting__title-name">{session.data?.name ?? session.data?.listName}</span>
-          <span className="voting__title-count">{voteCount} vote{voteCount > 1 ? "s" : ""}</span>
+          <span className="voting__title-count">
+            {voteCount} vote{voteCount > 1 ? "s" : ""}
+            {canUndo && (
+              <button
+                type="button"
+                className="voting__undo"
+                onClick={() => undo.mutate()}
+                title="Annuler le dernier vote"
+                aria-label="Annuler le dernier vote"
+              >
+                ↶
+              </button>
+            )}
+          </span>
         </span>
         <Link to={`/sessions/${id}/results`}>Voir les résultats</Link>
       </header>
