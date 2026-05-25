@@ -34,11 +34,11 @@ const RESULTS: ResultsDto = {
   voteCount: 7,
   stabilityReached: false,
   ranked: [
-    { rank: 1, value: "Alice", variants: ["Alicia"], eloScore: 1080, timesShown: 5, isBanned: false, sparkline: null, peakYear: null, peakCount: null },
-    { rank: 2, value: "Carol", variants: [], eloScore: 990, timesShown: 4, isBanned: false, sparkline: null, peakYear: null, peakCount: null },
+    { rank: 1, value: "Alice", variants: ["Alicia"], eloScore: 1080, timesShown: 5, isBanned: false },
+    { rank: 2, value: "Carol", variants: [], eloScore: 990, timesShown: 4, isBanned: false },
   ],
   banned: [
-    { rank: 0, value: "Bob", variants: [], eloScore: 1000, timesShown: 3, isBanned: true, sparkline: null, peakYear: null, peakCount: null },
+    { rank: 0, value: "Bob", variants: [], eloScore: 1000, timesShown: 3, isBanned: true },
   ],
 };
 

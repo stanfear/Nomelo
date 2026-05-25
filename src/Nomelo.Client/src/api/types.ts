@@ -63,9 +63,6 @@ export interface RankedItemDto {
   eloScore: number;
   timesShown: number;
   isBanned: boolean;
-  sparkline: string | null;
-  peakYear: number | null;
-  peakCount: number | null;
 }
 
 export interface ResultsDto {

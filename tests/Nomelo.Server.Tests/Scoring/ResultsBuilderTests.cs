@@ -98,29 +98,6 @@ public class ResultsBuilderTests
     }
 
     [Fact]
-    public void Propagates_sparkline_metadata_to_ranked_item()
-    {
-        var list = new ListFile("l", "L", new[]
-        {
-            new ListFileItem("Catherine", Array.Empty<string>(), null, "▆▇█▇▅", 1963, 95245),
-            new ListFileItem("Bob", Array.Empty<string>(), null, null, null, null)
-        });
-        var states = new Dictionary<string, (double, int, bool)>
-        {
-            ["Catherine"] = (1100, 5, false),
-            ["Bob"] = (900, 5, false),
-        };
-
-        var (ranked, _) = ResultsBuilder.Build(list, states);
-
-        var catherine = ranked.Single(r => r.Value == "Catherine");
-        catherine.Sparkline.Should().Be("▆▇█▇▅");
-        catherine.PeakYear.Should().Be(1963);
-        catherine.PeakCount.Should().Be(95245);
-        ranked.Single(r => r.Value == "Bob").Sparkline.Should().BeNull();
-    }
-
-    [Fact]
     public void Tied_items_ordered_by_times_shown_descending()
     {
         // Three items tied on ELO. They should be listed most-shown first so
