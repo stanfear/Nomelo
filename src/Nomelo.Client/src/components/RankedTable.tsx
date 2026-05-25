@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import type { RankedItemDto } from "../api/types";
 import "../styles/pages.css";
 
@@ -22,7 +22,10 @@ interface RowProps {
   onToggle?: (value: string) => void;
 }
 
-function Row({ item, showRank, maxElo, minElo, selectable, isSelected, onToggle }: RowProps) {
+// Memoised so toggling one checkbox in a multi-thousand-row list only
+// re-renders the affected row(s) — without this the entire ranked table
+// reconciles on every selection change and freezes the UI for seconds.
+const Row = memo(function Row({ item, showRank, maxElo, minElo, selectable, isSelected, onToggle }: RowProps) {
   const elo = Math.round(item.eloScore);
   const podium = showRank && item.rank <= 3 ? String(item.rank) : undefined;
   const range = Math.max(maxElo - minElo, 1);
@@ -67,16 +70,23 @@ function Row({ item, showRank, maxElo, minElo, selectable, isSelected, onToggle 
       </div>
     </div>
   );
-}
+});
 
 export function RankedTable({ ranked, banned, selection }: Props) {
   const [showBanned, setShowBanned] = useState(false);
   const bannedLabel = banned.length === 1 ? "1 banni" : `${banned.length} bannis`;
 
   const { maxElo, minElo } = useMemo(() => {
+    // Reduce instead of Math.max(...scores) — spreading 28k+ numbers blows the
+    // V8 argument stack on large lists and is the slow path on smaller ones.
+    let max = -Infinity;
+    let min = Infinity;
+    for (const r of ranked) {
+      if (r.eloScore > max) max = r.eloScore;
+      if (r.eloScore < min) min = r.eloScore;
+    }
     if (ranked.length === 0) return { maxElo: 1, minElo: 0 };
-    const scores = ranked.map((r) => r.eloScore);
-    return { maxElo: Math.max(...scores), minElo: Math.min(...scores) };
+    return { maxElo: max, minElo: min };
   }, [ranked]);
 
   const selectable = !!selection;
