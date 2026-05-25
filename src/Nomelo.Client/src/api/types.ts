@@ -52,6 +52,10 @@ export interface VoteRequest {
   result: VoteResult;
 }
 
+export interface BulkBanRequest {
+  items: string[];
+}
+
 export interface RankedItemDto {
   rank: number;
   value: string;

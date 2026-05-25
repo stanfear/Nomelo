@@ -109,6 +109,179 @@ public class VotingEndpointsTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task POST_items_bans_marks_existing_states_banned()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+        // Touch Alice via a vote so she has an existing ItemState row.
+        await client.PostAsJsonAsync($"/api/sessions/{session.Id}/votes",
+            new VoteRequest("Alice", "Bob", "prefer_a"));
+
+        var res = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice" }));
+
+        res.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var results = await client.GetFromJsonAsync<ResultsDto>($"/api/sessions/{session.Id}/results");
+        results!.Banned.Should().ContainSingle(b => b.Value == "Alice");
+    }
+
+    [Fact]
+    public async Task POST_items_bans_creates_state_for_untouched_items()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+
+        // Carol has never appeared in a vote; the endpoint must still create
+        // an ItemState row with IsBanned=true so /results sees her as banned.
+        var res = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Carol" }));
+
+        res.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var results = await client.GetFromJsonAsync<ResultsDto>($"/api/sessions/{session.Id}/results");
+        results!.Banned.Should().ContainSingle(b => b.Value == "Carol");
+        results.Ranked.Should().NotContain(r => r.Value == "Carol");
+    }
+
+    [Fact]
+    public async Task POST_items_bans_handles_mixed_existing_and_new_items()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+        await client.PostAsJsonAsync($"/api/sessions/{session.Id}/votes",
+            new VoteRequest("Alice", "Bob", "prefer_a"));
+
+        var res = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice", "Carol" }));
+
+        res.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var results = await client.GetFromJsonAsync<ResultsDto>($"/api/sessions/{session.Id}/results");
+        results!.Banned.Select(b => b.Value).Should().BeEquivalentTo(new[] { "Alice", "Carol" });
+    }
+
+    [Fact]
+    public async Task POST_items_bans_is_idempotent()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+
+        await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice" }));
+        var second = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice", "Alice" }));
+
+        second.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var results = await client.GetFromJsonAsync<ResultsDto>($"/api/sessions/{session.Id}/results");
+        results!.Banned.Where(b => b.Value == "Alice").Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task POST_items_bans_rejects_unknown_items()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+
+        var res = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice", "Zorro" }));
+
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // Reject is atomic: nothing should be banned when the input contains
+        // an unknown item, including the valid ones in the same batch.
+        var results = await client.GetFromJsonAsync<ResultsDto>($"/api/sessions/{session.Id}/results");
+        results!.Banned.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task POST_items_bans_rejects_empty_list()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+
+        var res = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(Array.Empty<string>()));
+
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task POST_items_bans_on_other_users_session_returns_404()
+    {
+        var alice = Client("alice");
+        var session = await NewSession(alice);
+
+        var bob = Client("bob");
+        var res = await bob.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice" }));
+
+        res.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task POST_items_unbans_restores_banned_items()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+        await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice", "Bob" }));
+
+        var res = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/unbans",
+            new BulkBanRequest(new[] { "Alice" }));
+
+        res.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var results = await client.GetFromJsonAsync<ResultsDto>($"/api/sessions/{session.Id}/results");
+        results!.Banned.Select(b => b.Value).Should().BeEquivalentTo(new[] { "Bob" });
+        results.Ranked.Should().Contain(r => r.Value == "Alice");
+    }
+
+    [Fact]
+    public async Task POST_items_unbans_is_idempotent_on_non_banned_items()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+
+        // Nobody is banned; unban should still succeed (no-op).
+        var res = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/unbans",
+            new BulkBanRequest(new[] { "Alice", "Bob" }));
+
+        res.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var results = await client.GetFromJsonAsync<ResultsDto>($"/api/sessions/{session.Id}/results");
+        results!.Banned.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task POST_items_unbans_rejects_empty_list()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+
+        var res = await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/unbans",
+            new BulkBanRequest(Array.Empty<string>()));
+
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task POST_items_unbans_on_other_users_session_returns_404()
+    {
+        var alice = Client("alice");
+        var session = await NewSession(alice);
+        await alice.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice" }));
+
+        var bob = Client("bob");
+        var res = await bob.PostAsJsonAsync($"/api/sessions/{session.Id}/items/unbans",
+            new BulkBanRequest(new[] { "Alice" }));
+
+        res.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task GET_results_returns_ranked_items()
     {
         var client = Client();

@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { apiFetch } from "./client";
 import type {
+  BulkBanRequest,
   CreateSessionRequest,
   ListDto,
   MeDto,
@@ -87,6 +88,38 @@ export const useUndoLastVote = (sessionId: string) => {
       qc.invalidateQueries({ queryKey: ["next-pair", sessionId] });
       qc.invalidateQueries({ queryKey: ["session", sessionId] });
       qc.invalidateQueries({ queryKey: ["results", sessionId] });
+    },
+  });
+};
+
+export const useBulkBan = (sessionId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (req: BulkBanRequest) =>
+      apiFetch<void>(`/api/sessions/${sessionId}/items/bans`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["results", sessionId] });
+      qc.invalidateQueries({ queryKey: ["next-pair", sessionId] });
+      qc.invalidateQueries({ queryKey: ["session", sessionId] });
+    },
+  });
+};
+
+export const useBulkUnban = (sessionId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (req: BulkBanRequest) =>
+      apiFetch<void>(`/api/sessions/${sessionId}/items/unbans`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["results", sessionId] });
+      qc.invalidateQueries({ queryKey: ["next-pair", sessionId] });
+      qc.invalidateQueries({ queryKey: ["session", sessionId] });
     },
   });
 };

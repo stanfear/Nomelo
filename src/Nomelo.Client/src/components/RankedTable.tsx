@@ -1,24 +1,57 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import type { RankedItemDto } from "../api/types";
 import "../styles/pages.css";
 
-interface Props { ranked: RankedItemDto[]; banned: RankedItemDto[]; }
+interface SelectionState {
+  selected: ReadonlySet<string>;
+  onToggle: (value: string) => void;
+}
+
+interface Props {
+  ranked: RankedItemDto[];
+  banned: RankedItemDto[];
+  /** When set, ranked rows show a checkbox column wired to this state. */
+  selection?: SelectionState;
+  /** When set, banned rows show a checkbox column wired to this state. */
+  bannedSelection?: SelectionState;
+}
 
 interface RowProps {
   item: RankedItemDto;
   showRank: boolean;
   maxElo: number;
   minElo: number;
+  selectable: boolean;
+  isSelected: boolean;
+  onToggle?: (value: string) => void;
 }
 
-function Row({ item, showRank, maxElo, minElo }: RowProps) {
+// Memoised so toggling one checkbox in a multi-thousand-row list only
+// re-renders the affected row(s) — without this the entire ranked table
+// reconciles on every selection change and freezes the UI for seconds.
+const Row = memo(function Row({ item, showRank, maxElo, minElo, selectable, isSelected, onToggle }: RowProps) {
   const elo = Math.round(item.eloScore);
   const podium = showRank && item.rank <= 3 ? String(item.rank) : undefined;
   const range = Math.max(maxElo - minElo, 1);
   const pct = Math.max(8, Math.min(100, ((item.eloScore - minElo) / range) * 100));
 
   return (
-    <div className="ranked__row" role="row" data-podium={podium}>
+    <div
+      className="ranked__row"
+      role="row"
+      data-podium={podium}
+      data-selected={isSelected ? "true" : undefined}
+    >
+      {selectable && (
+        <div className="ranked__select" role="cell">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggle?.(item.value)}
+            aria-label={`Sélectionner ${item.value}`}
+          />
+        </div>
+      )}
       <div className="ranked__rank" role="cell" aria-label={showRank ? `Rang ${item.rank}` : "Banni"}>
         {showRank ? item.rank : "·"}
       </div>
@@ -41,22 +74,46 @@ function Row({ item, showRank, maxElo, minElo }: RowProps) {
       </div>
     </div>
   );
-}
+});
 
-export function RankedTable({ ranked, banned }: Props) {
+export function RankedTable({ ranked, banned, selection, bannedSelection }: Props) {
   const [showBanned, setShowBanned] = useState(false);
   const bannedLabel = banned.length === 1 ? "1 banni" : `${banned.length} bannis`;
 
   const { maxElo, minElo } = useMemo(() => {
+    // Reduce instead of Math.max(...scores) — spreading 28k+ numbers blows the
+    // V8 argument stack on large lists and is the slow path on smaller ones.
+    let max = -Infinity;
+    let min = Infinity;
+    for (const r of ranked) {
+      if (r.eloScore > max) max = r.eloScore;
+      if (r.eloScore < min) min = r.eloScore;
+    }
     if (ranked.length === 0) return { maxElo: 1, minElo: 0 };
-    const scores = ranked.map((r) => r.eloScore);
-    return { maxElo: Math.max(...scores), minElo: Math.min(...scores) };
+    return { maxElo: max, minElo: min };
   }, [ranked]);
 
+  const selectable = !!selection;
+  const bannedSelectable = !!bannedSelection;
+
   return (
-    <div className="ranked" role="table" aria-label="Classement">
+    <div
+      className="ranked"
+      role="table"
+      aria-label="Classement"
+      data-selectable={selectable ? "true" : undefined}
+    >
       {ranked.map((r) => (
-        <Row key={r.value} item={r} showRank maxElo={maxElo} minElo={minElo} />
+        <Row
+          key={r.value}
+          item={r}
+          showRank
+          maxElo={maxElo}
+          minElo={minElo}
+          selectable={selectable}
+          isSelected={selection?.selected.has(r.value) ?? false}
+          onToggle={selection?.onToggle}
+        />
       ))}
 
       {banned.length > 0 && (
@@ -70,7 +127,10 @@ export function RankedTable({ ranked, banned }: Props) {
             {showBanned ? "Masquer" : "Afficher"} {bannedLabel}
           </button>
           {showBanned && (
-            <div className="ranked__banned">
+            <div
+              className="ranked__banned"
+              data-selectable={bannedSelectable ? "true" : undefined}
+            >
               {banned.map((r) => (
                 <Row
                   key={r.value}
@@ -78,6 +138,9 @@ export function RankedTable({ ranked, banned }: Props) {
                   showRank={false}
                   maxElo={maxElo}
                   minElo={minElo}
+                  selectable={bannedSelectable}
+                  isSelected={bannedSelection?.selected.has(r.value) ?? false}
+                  onToggle={bannedSelection?.onToggle}
                 />
               ))}
             </div>
