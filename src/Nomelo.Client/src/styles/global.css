@@ -2,7 +2,10 @@
 
 :root {
   color-scheme: light dark;
-  font-family: "Inter", "Manrope", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  /* Atkinson Hyperlegible is purpose-built (Braille Institute) to keep
+     I / l / 1 and O / 0 visually distinct — name lists in particular
+     suffered from Inter collapsing these glyphs. */
+  font-family: "Atkinson Hyperlegible", "Inter", "Manrope", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
