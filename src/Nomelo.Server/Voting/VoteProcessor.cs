@@ -80,6 +80,68 @@ public class VoteProcessor(AppDbContext db, ListCache cache)
         await tx.CommitAsync(ct);
     }
 
+    public async Task<bool> UndoLast(Guid sessionId, CancellationToken ct = default)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+        var session = await db.Sessions.FirstOrDefaultAsync(s => s.Id == sessionId, ct)
+                      ?? throw new InvalidOperationException($"session {sessionId} not found");
+
+        // PresentedAt + Id tiebreaker keeps ordering deterministic if two votes
+        // happen to land in the same tick.
+        var lastVote = await db.Votes
+            .Where(v => v.SessionId == sessionId)
+            .OrderByDescending(v => v.PresentedAt)
+            .ThenByDescending(v => v.Id)
+            .FirstOrDefaultAsync(ct);
+        if (lastVote is null) return false;
+
+        var stateA = await db.ItemStates.FirstAsync(
+            s => s.SessionId == sessionId && s.Item == lastVote.ItemA, ct);
+        var stateB = await db.ItemStates.FirstAsync(
+            s => s.SessionId == sessionId && s.Item == lastVote.ItemB, ct);
+
+        // KFactor in Apply was computed from TimesShown *before* incrementing.
+        var kA = EloCalculator.KFactor(stateA.TimesShown - 1);
+        var kB = EloCalculator.KFactor(stateB.TimesShown - 1);
+
+        stateA.TimesShown -= 1;
+        stateB.TimesShown -= 1;
+
+        switch (lastVote.Result)
+        {
+            case VoteResult.BanA:
+                stateA.IsBanned = false;
+                break;
+            case VoteResult.BanB:
+                stateB.IsBanned = false;
+                break;
+            case VoteResult.BanBoth:
+                stateA.IsBanned = false;
+                stateB.IsBanned = false;
+                break;
+            case VoteResult.PreferA:
+            case VoteResult.PreferB:
+            case VoteResult.LikeBoth:
+                var scoreA = lastVote.Result switch
+                {
+                    VoteResult.PreferA => 1.0,
+                    VoteResult.PreferB => 0.0,
+                    _ => 0.5
+                };
+                var prior = EloInverter.Invert(stateA.EloScore, stateB.EloScore, kA, kB, scoreA);
+                stateA.EloScore = prior.EloABefore;
+                stateB.EloScore = prior.EloBBefore;
+                break;
+        }
+
+        db.Votes.Remove(lastVote);
+        session.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return true;
+    }
+
     private async Task<ItemState> GetOrCreate(Guid sessionId, string item, CancellationToken ct)
     {
         var s = await db.ItemStates.FirstOrDefaultAsync(x => x.SessionId == sessionId && x.Item == item, ct);

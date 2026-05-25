@@ -76,6 +76,21 @@ export const useSubmitVote = (sessionId: string) => {
   });
 };
 
+export const useUndoLastVote = (sessionId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<void>(`/api/sessions/${sessionId}/votes/last`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["next-pair", sessionId] });
+      qc.invalidateQueries({ queryKey: ["session", sessionId] });
+      qc.invalidateQueries({ queryKey: ["results", sessionId] });
+    },
+  });
+};
+
 export const useResults = (sessionId: string | undefined) =>
   useQuery({
     queryKey: ["results", sessionId],
