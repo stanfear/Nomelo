@@ -938,11 +938,11 @@
   .home { padding: 2.5rem 1rem 4rem; }
   .results__main { padding: 1.5rem 1rem 4rem; }
   .ranked__row {
-    grid-template-columns: 44px 1fr auto;
-    gap: 0.75rem;
-    padding: 0.75rem 0.85rem;
+    grid-template-columns: 44px 1fr auto auto;
+    gap: 0.6rem;
+    padding: 0.75rem 0.7rem;
   }
-  .ranked__seen { display: none; }
+  .ranked__seen { font-size: 0.8rem; }
   .ranked__elo-bar { display: none; }
 }
 
