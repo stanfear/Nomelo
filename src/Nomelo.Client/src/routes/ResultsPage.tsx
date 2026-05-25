@@ -1,7 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useBulkBan, useBulkUnban, useResults } from "../api/hooks";
 import { RankedTable } from "../components/RankedTable";
+import { compileQuery } from "../components/globSearch";
 import "../styles/pages.css";
 
 type ConfirmMode = "ban" | "unban" | null;
@@ -14,6 +15,18 @@ export function ResultsPage() {
   const [selectedRanked, setSelectedRanked] = useState<Set<string>>(new Set());
   const [selectedBanned, setSelectedBanned] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState<ConfirmMode>(null);
+  const [search, setSearch] = useState("");
+
+  const matcher = useMemo(() => compileQuery(search), [search]);
+
+  const filteredRanked = useMemo(
+    () => (matcher && data ? data.ranked.filter((r) => matcher(r.value)) : data?.ranked ?? []),
+    [matcher, data],
+  );
+  const filteredBanned = useMemo(
+    () => (matcher && data ? data.banned.filter((r) => matcher(r.value)) : data?.banned ?? []),
+    [matcher, data],
+  );
 
   const toggleRanked = useCallback((value: string) => {
     setSelectedRanked((prev) => {
@@ -96,9 +109,26 @@ export function ResultsPage() {
           </div>
         )}
 
+        <div className="results__search">
+          <input
+            type="search"
+            className="results__search-input"
+            placeholder="Rechercher (utilisez * et ? pour un glob)"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Rechercher dans le classement"
+          />
+          {matcher && (
+            <span className="results__search-count">
+              {filteredRanked.length + filteredBanned.length} résultat
+              {filteredRanked.length + filteredBanned.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+
         <RankedTable
-          ranked={data.ranked}
-          banned={data.banned}
+          ranked={filteredRanked}
+          banned={filteredBanned}
           selection={{ selected: selectedRanked, onToggle: toggleRanked }}
           bannedSelection={{ selected: selectedBanned, onToggle: toggleBanned }}
         />
