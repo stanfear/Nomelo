@@ -664,8 +664,12 @@
   gap: 0.6rem;
 }
 
-.ranked[data-selectable="true"] > .ranked__row {
+.ranked[data-selectable="true"] .ranked__row {
   grid-template-columns: 32px 56px 1fr auto auto;
+}
+
+.ranked__virtual-item {
+  padding-bottom: 0.6rem;
 }
 .ranked__banned[data-selectable="true"] .ranked__row {
   grid-template-columns: 32px 56px 1fr auto auto;
