@@ -1,4 +1,5 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
+import { Virtuoso } from "react-virtuoso";
 import type { RankedItemDto } from "../api/types";
 import "../styles/pages.css";
 
@@ -26,9 +27,6 @@ interface RowProps {
   onToggle?: (value: string) => void;
 }
 
-// Memoised so toggling one checkbox in a multi-thousand-row list only
-// re-renders the affected row(s) — without this the entire ranked table
-// reconciles on every selection change and freezes the UI for seconds.
 const Row = memo(function Row({ item, showRank, maxElo, minElo, selectable, isSelected, onToggle }: RowProps) {
   const elo = Math.round(item.eloScore);
   const podium = showRank && item.rank <= 3 ? String(item.rank) : undefined;
@@ -95,6 +93,47 @@ export function RankedTable({ ranked, banned, selection, bannedSelection }: Prop
 
   const selectable = !!selection;
   const bannedSelectable = !!bannedSelection;
+  const rankedSelected = selection?.selected;
+  const rankedToggle = selection?.onToggle;
+  const bannedSelected = bannedSelection?.selected;
+  const bannedToggle = bannedSelection?.onToggle;
+
+  // Wrapper padding gives the inter-row spacing the .ranked container's
+  // `gap` used to provide. Virtuoso measures each item's offsetHeight, so
+  // padding (unlike margin) is included in the layout calculations.
+  const renderRanked = useCallback(
+    (_index: number, item: RankedItemDto) => (
+      <div className="ranked__virtual-item">
+        <Row
+          item={item}
+          showRank
+          maxElo={maxElo}
+          minElo={minElo}
+          selectable={selectable}
+          isSelected={rankedSelected?.has(item.value) ?? false}
+          onToggle={rankedToggle}
+        />
+      </div>
+    ),
+    [maxElo, minElo, selectable, rankedSelected, rankedToggle],
+  );
+
+  const renderBanned = useCallback(
+    (_index: number, item: RankedItemDto) => (
+      <div className="ranked__virtual-item">
+        <Row
+          item={item}
+          showRank={false}
+          maxElo={maxElo}
+          minElo={minElo}
+          selectable={bannedSelectable}
+          isSelected={bannedSelected?.has(item.value) ?? false}
+          onToggle={bannedToggle}
+        />
+      </div>
+    ),
+    [maxElo, minElo, bannedSelectable, bannedSelected, bannedToggle],
+  );
 
   return (
     <div
@@ -103,18 +142,17 @@ export function RankedTable({ ranked, banned, selection, bannedSelection }: Prop
       aria-label="Classement"
       data-selectable={selectable ? "true" : undefined}
     >
-      {ranked.map((r) => (
-        <Row
-          key={r.value}
-          item={r}
-          showRank
-          maxElo={maxElo}
-          minElo={minElo}
-          selectable={selectable}
-          isSelected={selection?.selected.has(r.value) ?? false}
-          onToggle={selection?.onToggle}
-        />
-      ))}
+      <Virtuoso
+        useWindowScroll
+        data={ranked}
+        itemContent={renderRanked}
+        increaseViewportBy={400}
+        // Renders enough rows on first paint so tests (jsdom has no layout
+        // measurements) and SSR get real content without waiting on a resize
+        // observer. Virtuoso swaps to its windowed render once mounted.
+        initialItemCount={Math.min(ranked.length, 20)}
+        computeItemKey={(_index, item) => item.value}
+      />
 
       {banned.length > 0 && (
         <>
@@ -131,18 +169,14 @@ export function RankedTable({ ranked, banned, selection, bannedSelection }: Prop
               className="ranked__banned"
               data-selectable={bannedSelectable ? "true" : undefined}
             >
-              {banned.map((r) => (
-                <Row
-                  key={r.value}
-                  item={r}
-                  showRank={false}
-                  maxElo={maxElo}
-                  minElo={minElo}
-                  selectable={bannedSelectable}
-                  isSelected={bannedSelection?.selected.has(r.value) ?? false}
-                  onToggle={bannedSelection?.onToggle}
-                />
-              ))}
+              <Virtuoso
+                useWindowScroll
+                data={banned}
+                itemContent={renderBanned}
+                increaseViewportBy={400}
+                initialItemCount={Math.min(banned.length, 20)}
+                computeItemKey={(_index, item) => item.value}
+              />
             </div>
           )}
         </>
