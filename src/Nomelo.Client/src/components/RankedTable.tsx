@@ -1,7 +1,19 @@
-import { memo, useCallback, useMemo, useState } from "react";
-import { Virtuoso } from "react-virtuoso";
+import { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import type { RankedItemDto } from "../api/types";
 import "../styles/pages.css";
+
+export interface ScrollToValueOptions {
+  /** "start" places the row at the viewport top (shifted by `topPx`).
+   *  "center" places the row vertically centered in the viewport. */
+  align?: "start" | "center";
+  /** With align "start", how far below the viewport top the row should land. */
+  topPx?: number;
+}
+
+export interface RankedTableHandle {
+  scrollToValue: (value: string, options?: ScrollToValueOptions) => void;
+}
 
 interface SelectionState {
   selected: ReadonlySet<string>;
@@ -39,6 +51,7 @@ const Row = memo(function Row({ item, showRank, maxElo, minElo, selectable, isSe
       role="row"
       data-podium={podium}
       data-selected={isSelected ? "true" : undefined}
+      data-row-value={item.value}
     >
       {selectable && (
         <div className="ranked__select" role="cell">
@@ -74,9 +87,36 @@ const Row = memo(function Row({ item, showRank, maxElo, minElo, selectable, isSe
   );
 });
 
-export function RankedTable({ ranked, banned, selection, bannedSelection }: Props) {
+export const RankedTable = forwardRef<RankedTableHandle, Props>(function RankedTable(
+  { ranked, banned, selection, bannedSelection },
+  ref,
+) {
   const [showBanned, setShowBanned] = useState(false);
   const bannedLabel = banned.length === 1 ? "1 banni" : `${banned.length} bannis`;
+  const rankedVirtuoso = useRef<VirtuosoHandle>(null);
+  const bannedVirtuoso = useRef<VirtuosoHandle>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToValue: (value, options) => {
+        const align = options?.align ?? "center";
+        // Negative offset shifts the resolved scroll position back up so the
+        // row lands `topPx` below the viewport top instead of flush against it.
+        const offset = align === "start" ? -(options?.topPx ?? 0) : 0;
+        const rankedIdx = ranked.findIndex((r) => r.value === value);
+        if (rankedIdx >= 0) {
+          rankedVirtuoso.current?.scrollToIndex({ index: rankedIdx, align, offset });
+          return;
+        }
+        const bannedIdx = banned.findIndex((r) => r.value === value);
+        if (bannedIdx >= 0) {
+          bannedVirtuoso.current?.scrollToIndex({ index: bannedIdx, align, offset });
+        }
+      },
+    }),
+    [ranked, banned],
+  );
 
   const { maxElo, minElo } = useMemo(() => {
     // Reduce instead of Math.max(...scores) — spreading 28k+ numbers blows the
@@ -143,6 +183,7 @@ export function RankedTable({ ranked, banned, selection, bannedSelection }: Prop
       data-selectable={selectable ? "true" : undefined}
     >
       <Virtuoso
+        ref={rankedVirtuoso}
         useWindowScroll
         data={ranked}
         itemContent={renderRanked}
@@ -170,6 +211,7 @@ export function RankedTable({ ranked, banned, selection, bannedSelection }: Prop
               data-selectable={bannedSelectable ? "true" : undefined}
             >
               <Virtuoso
+                ref={bannedVirtuoso}
                 useWindowScroll
                 data={banned}
                 itemContent={renderBanned}
@@ -183,4 +225,4 @@ export function RankedTable({ ranked, banned, selection, bannedSelection }: Prop
       )}
     </div>
   );
-}
+});

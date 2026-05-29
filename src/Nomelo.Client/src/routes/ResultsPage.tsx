@@ -1,11 +1,78 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import type { RankedItemDto } from "../api/types";
 import { useBulkBan, useBulkUnban, useResults } from "../api/hooks";
-import { RankedTable } from "../components/RankedTable";
+import { RankedTable, type RankedTableHandle } from "../components/RankedTable";
 import { compileQuery } from "../components/globSearch";
 import "../styles/pages.css";
 
 type ConfirmMode = "ban" | "unban" | null;
+
+type PendingAnchor =
+  | { kind: "precise"; value: string; topPx: number }
+  | { kind: "center"; value: string };
+
+// Returns the rendered .ranked__row elements that belong to `items` (so the
+// ban path only sees ranked rows, not banned ones, even if the banned section
+// is expanded).
+function visibleRowsFor(items: RankedItemDto[]): { value: string; rect: DOMRect }[] {
+  const itemSet = new Set(items.map((r) => r.value));
+  const result: { value: string; rect: DOMRect }[] = [];
+  const rows = document.querySelectorAll<HTMLElement>(".ranked__row[data-row-value]");
+  for (const row of rows) {
+    const value = row.dataset.rowValue;
+    if (!value || !itemSet.has(value)) continue;
+    result.push({ value, rect: row.getBoundingClientRect() });
+  }
+  return result;
+}
+
+// If any non-selected row is currently rendered with its top edge inside the
+// viewport, capture it so we can restore it to the exact same position after
+// the mutation. This is the high-fidelity path.
+function captureViewportAnchor(
+  items: RankedItemDto[],
+  selected: ReadonlySet<string>,
+): PendingAnchor | null {
+  for (const { value, rect } of visibleRowsFor(items)) {
+    if (selected.has(value)) continue;
+    if (rect.top < 0 || rect.top >= window.innerHeight) continue;
+    return { kind: "precise", value, topPx: rect.top };
+  }
+  return null;
+}
+
+// Fallback when the whole visible window is selected. The anchor is the first
+// non-selected row in `items` AFTER the last row currently visible (so we
+// re-center on what was just past where the user was looking), with a fallback
+// upwards if no survivor exists below.
+function captureBoundaryAnchor(
+  items: RankedItemDto[],
+  selected: ReadonlySet<string>,
+): PendingAnchor | null {
+  if (selected.size === 0) return null;
+  const visible = visibleRowsFor(items);
+  let lastVisibleValue: string | null = null;
+  let firstVisibleValue: string | null = null;
+  for (const { value, rect } of visible) {
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) continue;
+    if (firstVisibleValue === null) firstVisibleValue = value;
+    lastVisibleValue = value;
+  }
+  if (lastVisibleValue === null) return null;
+  const lastVisibleIdx = items.findIndex((r) => r.value === lastVisibleValue);
+  if (lastVisibleIdx < 0) return null;
+  for (let i = lastVisibleIdx + 1; i < items.length; i++) {
+    if (!selected.has(items[i].value)) return { kind: "center", value: items[i].value };
+  }
+  const firstVisibleIdx = firstVisibleValue
+    ? items.findIndex((r) => r.value === firstVisibleValue)
+    : -1;
+  for (let i = (firstVisibleIdx >= 0 ? firstVisibleIdx : items.length) - 1; i >= 0; i--) {
+    if (!selected.has(items[i].value)) return { kind: "center", value: items[i].value };
+  }
+  return null;
+}
 
 export function ResultsPage() {
   const { id = "" } = useParams();
@@ -16,6 +83,35 @@ export function ResultsPage() {
   const [selectedBanned, setSelectedBanned] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState<ConfirmMode>(null);
   const [search, setSearch] = useState("");
+  const pendingAnchor = useRef<PendingAnchor | null>(null);
+  const tableRef = useRef<RankedTableHandle>(null);
+
+  // After a bulk action invalidates the results query and the refreshed data
+  // re-renders, restore the user's scroll position. Two strategies:
+  //  - "precise": a non-selected row was visible; put it back at the same
+  //    viewport offset so the page feels unchanged minus the removed rows.
+  //  - "center": the whole visible window was selected; recenter on the
+  //    surviving boundary row instead. We wait two animation frames for
+  //    Virtuoso to lay out the new visible window before scrolling.
+  useLayoutEffect(() => {
+    const anchor = pendingAnchor.current;
+    if (!anchor) return;
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        if (anchor.kind === "precise") {
+          tableRef.current?.scrollToValue(anchor.value, { align: "start", topPx: anchor.topPx });
+        } else {
+          tableRef.current?.scrollToValue(anchor.value, { align: "center" });
+        }
+        pendingAnchor.current = null;
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [data]);
 
   const matcher = useMemo(() => compileQuery(search), [search]);
 
@@ -52,12 +148,18 @@ export function ResultsPage() {
   };
 
   const confirmBan = async () => {
+    pendingAnchor.current =
+      captureViewportAnchor(filteredRanked, selectedRanked) ??
+      captureBoundaryAnchor(filteredRanked, selectedRanked);
     await bulkBan.mutateAsync({ items: Array.from(selectedRanked) });
     setSelectedRanked(new Set());
     setConfirming(null);
   };
 
   const confirmUnban = async () => {
+    pendingAnchor.current =
+      captureViewportAnchor(filteredBanned, selectedBanned) ??
+      captureBoundaryAnchor(filteredBanned, selectedBanned);
     await bulkUnban.mutateAsync({ items: Array.from(selectedBanned) });
     setSelectedBanned(new Set());
     setConfirming(null);
@@ -132,6 +234,7 @@ export function ResultsPage() {
         </div>
 
         <RankedTable
+          ref={tableRef}
           ranked={filteredRanked}
           banned={filteredBanned}
           selection={{ selected: selectedRanked, onToggle: toggleRanked }}
