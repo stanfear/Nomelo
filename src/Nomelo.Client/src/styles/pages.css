@@ -642,6 +642,9 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.results__search-count-breakdown {
+  opacity: 0.75;
+}
 
 .results__shared-note {
   text-align: center;
@@ -948,6 +951,17 @@
   }
   .ranked__seen { font-size: 0.8rem; }
   .ranked__elo-bar { display: none; }
+
+  /* On phones the count breakdown does not fit next to the search input;
+     stack it below so it can wrap naturally. */
+  .results__search {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+  }
+  .results__search-count {
+    white-space: normal;
+  }
 }
 
 /* ---------- Bulk action bar ---------- */

@@ -94,7 +94,7 @@ export function ResultsPage() {
           </div>
           <div className="stat-card">
             <span className="stat-card__value">{data.ranked.length}</span>
-            <span className="stat-card__label">Classés</span>
+            <span className="stat-card__label">Actifs</span>
           </div>
           <div className="stat-card">
             <span className="stat-card__value">{data.banned.length}</span>
@@ -122,6 +122,11 @@ export function ResultsPage() {
             <span className="results__search-count">
               {filteredRanked.length + filteredBanned.length} résultat
               {filteredRanked.length + filteredBanned.length > 1 ? "s" : ""}
+              <span className="results__search-count-breakdown">
+                {" "}({filteredRanked.length} actif{filteredRanked.length > 1 ? "s" : ""}
+                {" · "}
+                {filteredBanned.length} banni{filteredBanned.length > 1 ? "s" : ""})
+              </span>
             </span>
           )}
         </div>

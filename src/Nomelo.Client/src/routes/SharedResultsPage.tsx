@@ -37,7 +37,7 @@ export function SharedResultsPage() {
           </div>
           <div className="stat-card">
             <span className="stat-card__value">{data.ranked.length}</span>
-            <span className="stat-card__label">Classés</span>
+            <span className="stat-card__label">Actifs</span>
           </div>
           <div className="stat-card">
             <span className="stat-card__value">{data.banned.length}</span>
