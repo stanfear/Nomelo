@@ -299,4 +299,86 @@ public class VotingEndpointsTests : IAsyncLifetime
         res.Ranked[0].Value.Should().Be("Alice");
         res.Banned.Should().ContainSingle(b => b.Value == "Bob");
     }
+
+    [Fact]
+    public async Task POST_export_unbanned_returns_filtered_json_attachment()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+        await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Bob" }));
+
+        var res = await client.PostAsJsonAsync(
+            $"/api/sessions/{session.Id}/export-unbanned",
+            new ExportUnbannedRequest("a-filtered", "A (filtré)"));
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        res.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        res.Content.Headers.ContentDisposition?.FileName.Should().Contain("a-filtered.json");
+
+        using var doc = System.Text.Json.JsonDocument.Parse(await res.Content.ReadAsStringAsync());
+        doc.RootElement.GetProperty("id").GetString().Should().Be("a-filtered");
+        doc.RootElement.GetProperty("name").GetString().Should().Be("A (filtré)");
+        var values = doc.RootElement.GetProperty("items").EnumerateArray()
+            .Select(i => i.GetProperty("value").GetString())
+            .ToArray();
+        values.Should().BeEquivalentTo(new[] { "Alice", "Carol" });
+    }
+
+    [Fact]
+    public async Task POST_export_unbanned_rejects_invalid_slug()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+
+        var res = await client.PostAsJsonAsync(
+            $"/api/sessions/{session.Id}/export-unbanned",
+            new ExportUnbannedRequest("Bad Id!", "x"));
+
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task POST_export_unbanned_rejects_collision_with_existing_list()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+
+        // The source list is registered with id "a"; reusing it must be refused
+        // so a later drop into lists/ doesn't silently overwrite the source.
+        var res = await client.PostAsJsonAsync(
+            $"/api/sessions/{session.Id}/export-unbanned",
+            new ExportUnbannedRequest("a", "A copy"));
+
+        res.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task POST_export_unbanned_rejects_when_no_items_remain()
+    {
+        var client = Client();
+        var session = await NewSession(client);
+        await client.PostAsJsonAsync($"/api/sessions/{session.Id}/items/bans",
+            new BulkBanRequest(new[] { "Alice", "Bob", "Carol" }));
+
+        var res = await client.PostAsJsonAsync(
+            $"/api/sessions/{session.Id}/export-unbanned",
+            new ExportUnbannedRequest("a-empty", "Empty"));
+
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task POST_export_unbanned_rejects_non_owner()
+    {
+        var alice = Client("alice");
+        var session = await NewSession(alice);
+
+        var bob = Client("bob");
+        var res = await bob.PostAsJsonAsync(
+            $"/api/sessions/{session.Id}/export-unbanned",
+            new ExportUnbannedRequest("a-filtered", "x"));
+
+        res.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

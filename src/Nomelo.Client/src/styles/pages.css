@@ -646,6 +646,28 @@
   opacity: 0.75;
 }
 
+.results__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.25rem 0;
+}
+.results__export {
+  appearance: none;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.results__export:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--color-like);
+}
+
 .results__shared-note {
   text-align: center;
   font-size: 0.85rem;
