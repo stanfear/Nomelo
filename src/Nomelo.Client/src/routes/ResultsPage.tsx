@@ -4,6 +4,7 @@ import type { RankedItemDto } from "../api/types";
 import { useBulkBan, useBulkUnban, useResults } from "../api/hooks";
 import { RankedTable, type RankedTableHandle } from "../components/RankedTable";
 import { compileQuery } from "../components/globSearch";
+import { ExportUnbannedDialog } from "./ExportUnbannedDialog";
 import "../styles/pages.css";
 
 type ConfirmMode = "ban" | "unban" | null;
@@ -83,6 +84,7 @@ export function ResultsPage() {
   const [selectedBanned, setSelectedBanned] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState<ConfirmMode>(null);
   const [search, setSearch] = useState("");
+  const [exporting, setExporting] = useState(false);
   const pendingAnchor = useRef<PendingAnchor | null>(null);
   const tableRef = useRef<RankedTableHandle>(null);
 
@@ -203,6 +205,18 @@ export function ResultsPage() {
             <span className="stat-card__label">Bannis</span>
           </div>
         </section>
+
+        {data.banned.length > 0 && data.ranked.length > 0 && (
+          <div className="results__actions">
+            <button
+              type="button"
+              className="results__export"
+              onClick={() => setExporting(true)}
+            >
+              Exporter les non-bannis comme nouvelle liste
+            </button>
+          </div>
+        )}
 
         {data.stabilityReached && (
           <div className="results__stability" role="status">
@@ -338,6 +352,15 @@ export function ResultsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {exporting && (
+        <ExportUnbannedDialog
+          sessionId={id}
+          defaultId={`${data.listId}-${id.slice(0, 8)}`}
+          defaultName={`${data.name ?? data.listName} (filtré)`}
+          onClose={() => setExporting(false)}
+        />
       )}
     </main>
   );

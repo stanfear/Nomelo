@@ -1,3 +1,7 @@
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Nomelo.Server.Auth;
 using Nomelo.Server.Data;
@@ -136,7 +140,74 @@ public static class VotingEndpoints
             return Results.Ok(await BuildResults(id, db, cache, ct));
         });
 
+        group.MapPost("/export-unbanned", async (
+            Guid id, ExportUnbannedRequest req, AppDbContext db,
+            ICurrentUser currentUser, CancellationToken ct) =>
+        {
+            if (!await OwnsSession(db, id, currentUser.UserId, ct)) return Results.NotFound();
+            return await ExportUnbanned(id, req, db, ct);
+        });
+
         return app;
+    }
+
+    private static readonly Regex SlugRegex = new("^[a-z0-9][a-z0-9_-]*$", RegexOptions.Compiled);
+    private static readonly JsonSerializerOptions ExportJson = new() { WriteIndented = true };
+
+    internal static async Task<IResult> ExportUnbanned(
+        Guid sessionId, ExportUnbannedRequest req, AppDbContext db, CancellationToken ct)
+    {
+        var newId = req.NewId?.Trim() ?? "";
+        var newName = req.NewName?.Trim() ?? "";
+        if (newId.Length == 0 || newId.Length > 64 || !SlugRegex.IsMatch(newId))
+            return Results.BadRequest(new { error = "id must be lowercase alphanumeric (- _ allowed), 1-64 chars" });
+        if (newName.Length == 0 || newName.Length > 120)
+            return Results.BadRequest(new { error = "name must be 1-120 chars" });
+
+        var session = await db.Sessions.AsNoTracking().FirstAsync(s => s.Id == sessionId, ct);
+        var listMeta = await db.Lists.AsNoTracking().FirstOrDefaultAsync(l => l.Id == session.ListId, ct);
+        if (listMeta is null) return Results.NotFound(new { error = "source list not found" });
+        if (string.IsNullOrEmpty(listMeta.FilePath) || !File.Exists(listMeta.FilePath))
+            return Results.Problem("source list file missing on disk");
+
+        // Collision with an already-registered list would silently overwrite
+        // the source if the user later drops the file into lists/. Reject up
+        // front so the failure is visible.
+        if (await db.Lists.AsNoTracking().AnyAsync(l => l.Id == newId, ct))
+            return Results.Conflict(new { error = $"a list with id '{newId}' already exists" });
+
+        var banned = await db.ItemStates.AsNoTracking()
+            .Where(s => s.SessionId == sessionId && s.IsBanned)
+            .Select(s => s.Item)
+            .ToListAsync(ct);
+        var bannedSet = new HashSet<string>(banned, StringComparer.Ordinal);
+
+        await using var stream = File.OpenRead(listMeta.FilePath);
+        var node = (await JsonNode.ParseAsync(stream, cancellationToken: ct)) as JsonObject;
+        if (node is null) return Results.Problem("source list JSON is not an object");
+
+        node["id"] = newId;
+        node["name"] = newName;
+
+        var filtered = new JsonArray();
+        if (node["items"] is JsonArray items)
+        {
+            foreach (var item in items)
+            {
+                if (item is JsonObject itemObj
+                    && itemObj["value"]?.GetValue<string>() is { } value
+                    && !bannedSet.Contains(value))
+                {
+                    filtered.Add(item.DeepClone());
+                }
+            }
+        }
+        if (filtered.Count == 0)
+            return Results.BadRequest(new { error = "no items would remain after filtering" });
+        node["items"] = filtered;
+
+        var bytes = Encoding.UTF8.GetBytes(node.ToJsonString(ExportJson));
+        return Results.File(bytes, "application/json", fileDownloadName: $"{newId}.json");
     }
 
     internal static async Task<ResultsDto> BuildResults(Guid sessionId, AppDbContext db, ListCache cache, CancellationToken ct)
